@@ -1,0 +1,20 @@
+Output dir: C:\_GitHub\RetroCogs\FirstShot\includes\bin
+parsing
+Got 16 errors and 0 warnings while executing:
+  (C:\_GitHub\RetroCogs\FirstShot\includes\fastLoader.s 364:4) Error: Invalid token
+  (C:\_GitHub\RetroCogs\FirstShot\includes\fastLoader.s 365:23) Error: Syntax error
+  (C:\_GitHub\RetroCogs\FirstShot\includes\fastLoader.s 366:4) Error: Invalid token
+  (C:\_GitHub\RetroCogs\FirstShot\includes\fastLoader.s 32:21) Error: Pseudo command 'tba' not defined
+  (C:\_GitHub\RetroCogs\FirstShot\includes\fastLoader.s 36:21) Error: Pseudo command 'tab' not defined
+  ...
+
+                      // !word $0000 // modulo (unused)
+
+
+;; ------------------------------------------------------------
+   ^
+
+Error: Invalid token
+at line 364, column 4 in fastLoader.s
+
+
