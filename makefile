@@ -29,8 +29,8 @@ endif
 all: data datablobs code disk
 
 disk: 
-	$(C1541) -format "first shot,0" d81 $(DISKNAME)
-	$(C1541) -attach $(DISKNAME) 8 -write bin/$(APPNAME).prg.addr.mc "first shot"
+	$(C1541) -format "game shell 65,0" d81 $(DISKNAME)
+	$(C1541) -attach $(DISKNAME) 8 -write bin/$(APPNAME).prg.addr.mc "game shell 65"
 	$(C1541) -attach $(DISKNAME) 8 -write sdcard/data.bin.addr.mc "fs-iffl0"
 
 datablobs:
@@ -52,9 +52,6 @@ datablobs:
 		sdcard/hudtop_chr.bin \
 		sdcard/hudNumbers_chr.bin \
 		sdcard/spawnin_chr.bin \
-		assets/se_powerpickup.raw \
-		assets/se_playerfire.raw \
-		assets/se_explo.raw \
 		sdcard/data.bin
 
 	$(MEGATOOL) -a sdcard/data.bin 00000000

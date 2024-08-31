@@ -8,8 +8,6 @@
 .const COLOR_RAM = $ff80a00		// + 26*40*2
 
 .const SCREEN_RAM = $50000		// Upto $4000 in size
-.const RRB_WORK_RAM = $54000
-.const MAP_RAM = $58000
 
 .const CHARS_RAM = $20000		// Upto $c000 in size
 
@@ -35,8 +33,8 @@
 .segmentdef BSS [start=$e000, max=$f400, virtual]
 
 .segmentdef ScreenRam [start=SCREEN_RAM, virtual]
-.segmentdef RRBWorkRam [startAfter="ScreenRam", virtual]
-.segmentdef MapRam [startAfter="RRBWorkRam", virtual]
+.segmentdef RRBWorkRam [startAfter="ScreenRam", max=SCREEN_RAM+$ffff, virtual]
+.segmentdef MapRam [startAfter="RRBWorkRam", max=SCREEN_RAM+$ffff, virtual]
 
 .cpu _45gs02				
 
@@ -174,9 +172,6 @@ TextEffect:		.byte $00
 .const sprHudTop = AddAsset("FS-S5", "sdcard/hudtop_chr.bin")
 .const sprHudNumbers = AddAsset("FS-S6", "sdcard/hudNumbers_chr.bin")
 .const sprSpawn = AddAsset("FS-S7", "sdcard/spawnin_chr.bin")
-.const sample0 = AddAsset("FS-SM0", "assets/se_powerpickup.raw")
-.const sample1 = AddAsset("FS-SM1", "assets/se_playerfire.raw")
-.const sample2 = AddAsset("FS-SM2", "assets/se_explo.raw")
 
 .print "--------"
 
