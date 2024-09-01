@@ -159,21 +159,6 @@ UpdateData: {
 		rts
 	}
 
-	UpdateLayerD: {
-		_set32im(LayerDTileBuffer, src_tile_ptr)
-		_set32im(LayerDAttribBuffer, src_attrib_ptr)
-
-		_set16im(LayerD.ChrOffs, dst_offset)
-		_set16im(LayerD.ChrSize, copy_length)
-
-		_set16im(0, src_offset)
-		_set16im(LayerD.ChrSize, src_stride)
-
-		jsr CopyLayerChunks
-
-		rts
-	}
-
 	UpdateRRB: {
 		_set32im(RRBTileBuffer, src_tile_ptr)
 		_set32im(RRBAttribBuffer, src_attrib_ptr)

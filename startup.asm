@@ -47,7 +47,6 @@
 //
 .const Layer1 = Layer_BG("stars", TILES_WIDE, true, 1)
 .const LayerRRB = Layer_RRB("rrb", 127, 1)				// This is capped at 127 max due to index register limitation
-.const LayerD = Layer_BG("dbg", 42, false, 0)
 .const LayerEOL = Layer_EOL("eol")
 
 // ------------------------------------------------------------
@@ -75,12 +74,6 @@ Tmp3:			.word $0000,$0000
 Tmp4:			.word $0000,$0000
 Tmp5:			.word $0000,$0000
 Tmp6:			.word $0000,$0000
-Tmp7:			.word $0000
-
-VBlankCount:	.byte $00
-FadeComplete:	.byte $00
-IRQPos:			.byte $00
-IRQCount:		.byte $00
 
 GameState:		.byte $00		// Titles / Play / HiScore etc
 GameSubState:	.byte $00
@@ -104,14 +97,6 @@ TextEffect:		.byte $00
 	sta TextPosY
 }
 
-.macro TextPrintMsg(message) {
-    lda #<message
-    sta TextPtr+0
-    lda #>message
-    sta TextPtr+1
-    jsr LayerDPrintMsg
-}
-
 .macro TextSetMsgPtr(message) {
     lda #<message
     sta TextPtr+0
@@ -123,7 +108,7 @@ TextEffect:		.byte $00
 	.if (applysin)
 	{
 	    clc
-	    lda VBlankCount
+	    lda Irq.VBlankCount
 	    adc #sinoffs
 	    sta TextOffs
 	    lda #$01
@@ -180,6 +165,8 @@ TextEffect:		.byte $00
 
 .print "--------"
 
+#import "Irq.s"
+
 #import "includes/layers_code.s"
 #import "includes/assets_code.s"
 #import "includes/system_code.s"
@@ -202,9 +189,9 @@ TextEffect:		.byte $00
 Entry: 
 {
 	lda #$00
-	sta FadeComplete
-	sta VBlankCount
-	sta Tmp7
+	sta Irq.FadeComplete
+	sta Irq.VBlankCount
+	sta Irq.Tmp7
 
 	jsr System.Initialization1
 
@@ -217,9 +204,9 @@ Entry:
     lda $dc0d
     lda $dd0d
 
-    lda #<irqFadeOutHandler
+    lda #<Irq.irqFadeOutHandler
     sta $fffe
-    lda #>irqFadeOutHandler
+    lda #>Irq.irqFadeOutHandler
     sta $ffff
 
     lda #$01
@@ -240,7 +227,7 @@ Entry:
 	jsr fl_exit
 
 	// wait until fade is complete. loading in xemu will have already ended by now.
-!:	lda FadeComplete
+!:	lda Irq.FadeComplete
 	beq !-
 
 	// Update screen positioning if PAL/NTSC has changed
@@ -262,14 +249,6 @@ Entry:
 	jsr Layers.SetXPosLo
 	lda #>SCREEN_WIDTH
 	jsr Layers.SetXPosHi
-
-	ldx #LayerD.id
-	lda #$00
-	jsr Layers.SetXPosLo
-	lda #$00
-	jsr Layers.SetXPosHi
-
-	jsr LayerDClear
 
 	jsr Layers.UpdateData.InitEOL
 
@@ -295,9 +274,9 @@ Entry:
     lda $dd0d
 
     // change pointer to new interrupt
-    lda #>irqBotHandler
+    lda #>Irq.irqBotHandler
     sta $ffff
-    lda #<irqBotHandler
+    lda #<Irq.irqBotHandler
     sta $fffe
 
     // Disable RSTDELENS
@@ -309,14 +288,14 @@ Entry:
     sta $d01a
 
     // set the interrupt to line 250
-    jsr SetIRQBotPos
+    jsr Irq.SetIRQBotPos
 
     cli
 
 mainloop:
-	lda VBlankCount
+	lda Irq.VBlankCount
 !:
-	cmp VBlankCount
+	cmp Irq.VBlankCount
 	beq !-
 
 	DbgBord(1)
@@ -355,7 +334,7 @@ mainloop:
 	DbgBord(0)
 
 	// Wait a couple of frames before enabling screen to give screen time to properly redraw itself and not show garbage
-	lda VBlankCount
+	lda Irq.VBlankCount
 	cmp #$05
 	bne !+
 	jsr System.EnableScreen
@@ -366,9 +345,9 @@ mainloop:
 // set fadecomplete to 0 for the fade-in
 InitFadeIn: {
 	lda #$00
-	sta FadeComplete
-	sta VBlankCount
-	sta Tmp7
+	sta Irq.FadeComplete
+	sta Irq.VBlankCount
+	sta Irq.Tmp7
 	rts
 }
 
@@ -380,260 +359,6 @@ SwitchGameStates: {
 	rts
 }
 
-SetIRQBotPos: {
-    // set the interrupt position
-    lda System.IRQBotPos+0
-    sta $d012
-    lda System.IRQBotPos+1
-    beq _clear_bit
-    lda #$80
-    tsb $d011
-    rts
-_clear_bit:
-    lda #$80
-    trb $d011
-	rts
-}
-
-irqFadeOutHandler:
-{
-		php
-		pha
-		phx
-		phy
-
-		lda FadeComplete
-		bne FadeoutCompleteIRQ
-
-		lda Tmp7
-		cmp #$03
-		bne !+
-		jsr DecreasePalette
-		lda #$00
-		sta Tmp7
-!:		inc VBlankCount
-		inc Tmp7
-		lda VBlankCount
-		cmp #60
-		bne irqFadeOutHandlerEnd
-
-FadeoutCompleteIRQ:
-		lda #$01
-		sta FadeComplete
-		lda #$00								// code to run when fadeout is complete
-		sta $d020
-		sta $d020
-		sta VBlankCount
-		jsr System.DisableScreen
-
-irqFadeOutHandlerEnd:
-		ply
-		plx
-		pla
-		plp
-
-		asl $d019
-		rti
-}
-
-DecreasePalette:
-		ldx #$00
-
-!DecreasePaletteLoop:
-		lda $d100,x
-		sec
-		sbc #$01
-		bcs !+
-		lda #$00
-!:		sta $d100,x
-
-		lda $d200,x
-		sec
-		sbc #$01
-		bcs !+
-		lda #$00
-!:		sta $d200,x
-
-		lda $d300,x
-		sec
-		sbc #$01
-		bcs !+
-		lda #$00
-!:		sta $d300,x
-
-		inx
-		bne !DecreasePaletteLoop-
-
-		rts
-		
-
-IncreasePalette:
-		lda #%00000010 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
-		sta $d070 
-
-		clc
-		lda #<(fadeTabStart+1)
-fadeInVal:
-		adc #$f0
-		sta Tmp7+0
-		lda #>(fadeTabStart+1)
-		adc #$00
-		sta Tmp7+1
-
-        ldx #$00
-!IncreasePaletteloop:
-		.for(var p=0; p<14; p++) 
-		{
-			lda Palette + (p * $30) + $000,x
-			tay
-			lda swapNybbleTab,y
-			tay
-			lda (Tmp7),y
-			sta $d100 + (p * $10),x
-
-			lda Palette + (p * $30) + $010,x
-			tay
-			lda swapNybbleTab,y
-			tay
-			lda (Tmp7),y
-			sta $d200 + (p * $10),x
-
-			lda Palette + (p * $30) + $020,x
-			tay
-			lda swapNybbleTab,y
-			tay
-			lda (Tmp7),y
-			sta $d300 + (p * $10),x
-		}
-
-		lda #$ff				// flash
-		tay
-		lda swapNybbleTab,y
-		tay
-		lda (Tmp7),y
-		sta $d1f0,x
-		sta $d2f0,x
-		sta $d3f0,x
-
-		inx
-		cpx #$10
-		lbne !IncreasePaletteloop-
-		rts
-
-fadeTabStart:
-		.fill 256, 0
-swapNybbleTab:
-		.fill 256, (i>>4) | (i<<4)
-
-irqHandler:
-{
-	pha
-	phx
-	phy
-
-	dec IRQCount
-	lbeq _lastIRQ
-
-	// ldx IRQCount
-	// lda rngtable,x
-	// sta $d000
-
-//	lda IRQPos
-//	sta $d001
-
-	lda Palette + $0e
-	sta $d10e
-	lda Palette + $1e
-	sta $d20e
-	lda Palette + $2e
-	sta $d30e
-
-	clc
-	lda IRQPos
-	adc #$02
-	sta IRQPos
-	sta $d012
-
-	// clear the signal
-	lsr $d019
-
-	ply
-	plx
-	pla
-
-	rti
-
-_lastIRQ:	
-	// This was the last IRQ, set the new IRQ at the bottom handler
-
-    // change pointer to new interrupt
-    lda #>irqBotHandler
-    sta $ffff
-    lda #<irqBotHandler
-    sta $fffe
-
-    // set the interrupt position
-    jsr SetIRQBotPos
-
-	// clear the signal
-	lsr $d019
-
-	ply
-	plx
-	pla
-
-	rti
-}
-
-irqBotHandler:
-{
-	pha
-
-	inc VBlankCount
-
-	lda FadeComplete
-	bne SkipFadeIn
-
-	lda VBlankCount
-	asl
-	asl
-	cmp #$00-4
-	bcc !+
-	lda #$01
-	sta FadeComplete
-	lda #$ff
-!:	sta fadeInVal+1
-	jsr IncreasePalette
-
-SkipFadeIn:
-
-	lda #$00
-	sta $d021
-
-    // change pointer to new interrupt
-    lda #>irqHandler
-    sta $ffff
-    lda #<irqHandler
-    sta $fffe
-
-    lda #(NUM_ROWS*8)/2
-    sta IRQCount
-
-    // set the interrupt position
-    lda System.IRQTopPos
-    sta IRQPos
-    sta $d012
-    lda #$80
-    trb $d011
-
-	// clear the signal
-	lsr $d019
-
-	pla
-
-	rti
-}
-
 UpdateDisplay:
 {
 	DbgIncBord()
@@ -641,9 +366,6 @@ UpdateDisplay:
 
 	DbgIncBord()
 	jsr Layers.UpdateData.UpdateRRB
-
-	DbgIncBord()
-	jsr Layers.UpdateData.UpdateLayerD
 
 	DbgIncBord()
 	jsr Layers.UpdateScrollPositions
@@ -828,237 +550,14 @@ ClearPalette: {
 		rts
 }
 
-//
-LayerDClear: {
-	.var chr_ptr = Tmp					// 16bit
-	.var attrib_ptr = Tmp+2				// 16bit
-
-	_set16im(LayerDTileBuffer, chr_ptr)
-	_set16im(LayerDAttribBuffer, attrib_ptr)
-
-	ldz #$00
-!rloop:
-
-		ldy #$00
-
-		ldx #$00
-	!cloop:
-		lda #$20
-		sta (chr_ptr),y
-		lda #$00
-		sta (attrib_ptr),y
-		iny
-		lda #$00
-		sta (chr_ptr),y
-		lda #$07
-		sta (attrib_ptr),y
-		iny
-
-		inx
-		cpx #LayerD.num
-		bne !cloop-
-
-	_add16im(chr_ptr, LayerD.ChrSize, chr_ptr)
-	_add16im(attrib_ptr, LayerD.ChrSize, attrib_ptr)
-
-	inz
-	cpz #NUM_ROWS
-	bne !rloop-
-
-	rts
-}
-
-//
-DrawHUD: {
-	.var chr_ptr = Tmp					// 16bit
-	.var attrib_ptr = Tmp+2				// 16bit
-	.var o_chr_offs = Tmp1				// 16bit
-	.var chr_offs = Tmp1+2				// 16bit
-
-	_set16im((hudChars.addr/64), o_chr_offs)
-
-	_set16im(LayerDTileBuffer + 14 + ((NUM_ROWS-3) * LayerD.ChrSize), chr_ptr)
-	_set16im(LayerDAttribBuffer + 14 + ((NUM_ROWS-3) * LayerD.ChrSize), attrib_ptr)
-
-	jsr drawBlock
-
-	rts
-
-	drawBlock: 
-	{
-		ldz #$00
-	!rloop:
-
-			_add16im(o_chr_offs, 0, chr_offs)
-
-			ldy #$00
-
-			ldx #$00
-		!cloop:
-			lda chr_offs+0
-			sta (chr_ptr),y
-			lda #$08
-			sta (attrib_ptr),y
-			iny
-			lda chr_offs+1
-			sta (chr_ptr),y
-			lda #$0f
-			sta (attrib_ptr),y
-			iny
-
-			inw chr_offs
-
-			inx
-			cpx #14
-			bne !cloop-
-
-		_add16im(o_chr_offs, 14, o_chr_offs)
-
-		_add16im(chr_ptr, LayerD.ChrSize, chr_ptr)
-		_add16im(attrib_ptr, LayerD.ChrSize, attrib_ptr)
-
-		inz
-		cpz #3
-		bne !rloop-
-
-		rts
-	}
-}
-
-PrintHexByte: {
-	pha
-	and #$0f
-	tax
-	lda hexStr,x
-	sta tmpstr+1
-	pla
-	lsr
-	lsr
-	lsr
-	lsr
-	and #$0f
-	tax
-	lda hexStr,x
-	sta tmpstr+0
-
-	TextPrintMsg(tmpstr)
-
-	clc
-	lda TextPosX
-	adc #$02
-	sta TextPosX
-
-	rts
-}
-
 // ----------------------------------------------------------------------------
 //
-LayerDPrintMsg: {
-	.var chr_ptr = Tmp
-	.var attrib_ptr = Tmp+2
-
-	//
-	ldx TextPosY
-
-	clc
-	lda #<LayerDTileBuffer
-	adc LayerDRowOffsLo,x
-	sta chr_ptr+0
-	lda #>LayerDTileBuffer
-	adc LayerDRowOffsHi,x
-	sta chr_ptr+1
-
-	clc
-	lda #<LayerDAttribBuffer
-	adc LayerDRowOffsLo,x
-	sta attrib_ptr+0
-	lda #>LayerDAttribBuffer
-	adc LayerDRowOffsHi,x
-	sta attrib_ptr+1
-
-	lda TextPosX
-	asl
-	tay
-
-	ldz #$00
-
-!loop:
-
-	lda (TextPtr),z
-	beq !exit+
-
-	inz
-
-	cmp #'\n'
-	beq !dowrap+
-
-	sta (chr_ptr),y
-	lda #$00
-	sta (attrib_ptr),y
-	iny
-	lda #$0b
-	sta (attrib_ptr),y
-	iny
-	cpy #(LayerD.num)*2
-	bcc !nowrap+
-
-!dowrap:
-
-	inx
-	cpx #NUM_ROWS
-	bcs !exit+
-
-	// 
-	clc
-	lda #<LayerDTileBuffer
-	adc LayerDRowOffsLo,x
-	sta chr_ptr+0
-	lda #>LayerDTileBuffer
-	adc LayerDRowOffsHi,x
-	sta chr_ptr+1
-
-	clc
-	lda #<LayerDAttribBuffer
-	adc LayerDRowOffsLo,x
-	sta attrib_ptr+0
-	lda #>LayerDAttribBuffer
-	adc LayerDRowOffsHi,x
-	sta attrib_ptr+1
-
-	lda TextPosX
-	asl
-	tay
-
-!nowrap:
-	jmp !loop-
-
-!exit:
-
-	rts
-}
-
-.encoding "screencode_mixed"
-testTxt1:
-	.text "firstshot"
-	.byte $ff
-testTxt2:
-	.text "[press fire to start]"
-	.byte $ff
 
 chrWide:
 	.byte $10,$10,$10,$0f,$10,$0f,$0d,$10,$10,$07,$0c,$10,$0c,$11,$10,$11
 	.byte $10,$11,$10,$10,$0f,$10,$10,$11,$0f,$10,$10,$10,$08,$10,$10,$10
 	.byte $08,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10
 	.byte $10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10
-
-GetRandom: {
-	phx
-	inc RngIndx
-	ldx RngIndx
-	lda rngtable,x
-	plx
-	rts
-}
 
 SprCenterXPos: {
 	lda #$00
@@ -1184,20 +683,6 @@ endtxt:
 #import "gsTitles.s"
 
 .segment Data "Text"
-.encoding "screencode_mixed"
-hexStr:		.text @"0123456789abcdef"
-			.byte $00
-
-tmpstr:		.text @"00"
-			.byte $00
-
-.encoding "ascii"
-
-RngIndx:
-	.byte $00
-
-rngtable:
-	.fill 256, ((random() * 2.0) - 1.0) * 127
 
 sintable2:
 	.fill 256, (sin((i/256) * PI * 2) * 31)
@@ -1241,30 +726,6 @@ BgMap:
 .segment Data "Bg0 Tiles"
 Bg0Tiles:
 	.import binary "./sdtest2/bg20_tiles.bin"
-
-.segment Data "tttYList Tables"
-tttYListLo:
-	.fill 4, <[(i * (14*64))]
-tttYListHi:
-	.fill 4, >[(i * (14*64))]
-
-.segment Data "LayerNCM Tables"
-LayerNCMRowOffsLo:
-	.fill NUM_ROWS, <[(i * Layer1.ChrSize)]
-LayerNCMRowOffsHi:
-	.fill NUM_ROWS, >[(i * Layer1.ChrSize)]
-
-.segment Data "LayerD Tables"
-LayerDRowOffsLo:
-	.fill NUM_ROWS, <[(i * LayerD.ChrSize)]
-LayerDRowOffsHi:
-	.fill NUM_ROWS, >[(i * LayerD.ChrSize)]
-
-.segment Mapped8000 "LayerD Work Ram"
-LayerDTileBuffer:
-	.fill LayerD.ChrSize * NUM_ROWS, $00
-LayerDAttribBuffer:
-	.fill LayerD.ChrSize * NUM_ROWS, $00
 
 .segment Mapped8000 "RRB Work Ram"
 RRBCount:
