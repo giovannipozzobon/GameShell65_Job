@@ -64,9 +64,6 @@ gsDrwTitles: {
 	TextSetMsgPtr(testTxt2)
 	TextDrawSpriteMsg(true, 64, true)
 
-	lda #$00
-	sta $d020
-
 	lda #$b0
 	sta TextPosY
 

@@ -20,7 +20,7 @@
 
 // If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
 #define V200
-.const SCREEN_HEIGHT = 200
+.const SCREEN_HEIGHT = 208
 
 .const TILES_WIDE = (SCREEN_WIDTH/16)+1
 
@@ -46,13 +46,12 @@
 // ------------------------------------------------------------
 //
 .const Layer1 = Layer_BG("stars", TILES_WIDE, true, 1)
-.const LayerRRB = Layer_RRB("rrb", 127, 1)				// This is capped at 127 max due to index register limitation
+.const LayerRRB = Layer_RRB("rrb", 63, 1)				// This is capped at 127 max due to index register limitation
 .const LayerEOL = Layer_EOL("eol")
 
 // ------------------------------------------------------------
 //
-
-.const NUM_ROWS = 26
+.const NUM_ROWS = SCREEN_HEIGHT / 8
 
 .const BGROWSIZE = 32 * 2
 
@@ -209,14 +208,11 @@ Entry:
     lda #$01
     sta $d01a
 
-	// Inital IRQs at position $08 to avoid visible line 
-	// when disabling the screen
-    lda #$08
-	sta $d012
-    lda #$80
-    trb $d011
+	jsr Irq.SetIRQBotPos
 
     cli
+
+	jsr System.EnableScreen
 
 	// Wait for IRQ before disabling the screen
 	lda Irq.VBlankCount
@@ -276,20 +272,27 @@ Entry:
 
 	cli
 
-mainloop:
-	inc $d020
+	lda #$00
+	sta $d020
 
+	jsr System.EnableScreen
+
+mainloop:
 	lda Irq.VBlankCount
 !:
 	cmp Irq.VBlankCount
 	beq !-
 
-	DbgBord(1)
+	DbgBord(4)
 
 	// Update the display buffers
 	jsr UpdateDisplay
 
+	DbgBord(5)
+
 	jsr RRBSpr.Clear
+
+	DbgBord(6)
 
 	// jsr Player.UpdDPad
 
@@ -301,11 +304,11 @@ mainloop:
 
 	jsr Camera.CalcParallax
 
-	DbgBord(1)
-
 	ldx #Layer1.id
 	lda Camera.XScroll1+0
 	jsr Layers.SetFineScroll
+
+	DbgBord(7)
 
 	// Run the draw
 	lda GameState
@@ -319,13 +322,7 @@ mainloop:
 
 	DbgBord(0)
 
-	// Wait a couple of frames before enabling screen to give screen time to properly redraw itself and not show garbage
-	lda Irq.VBlankCount
-	cmp #$05
-	bne !+
-	jsr System.EnableScreen
-
-!:	jmp mainloop
+	jmp mainloop
 }
 
 // set fadecomplete to 0 for the fade-in
@@ -343,21 +340,11 @@ SwitchGameStates: {
 
 UpdateDisplay:
 {
-	DbgIncBord()
 	jsr Layers.UpdateData.UpdateLayer1
 
-	DbgIncBord()
 	jsr Layers.UpdateData.UpdateRRB
 
-	DbgIncBord()
 	jsr Layers.UpdateScrollPositions
-
-	DbgDecBord()
-	DbgDecBord()
-	DbgDecBord()
-	DbgDecBord()
-	DbgDecBord()
-	DbgDecBord()
 
 	rts
 }

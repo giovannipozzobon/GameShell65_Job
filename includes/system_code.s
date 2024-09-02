@@ -36,6 +36,10 @@ Initialization1:
 	lda #$80		
 	trb $d05d			//Clear bit7=HOTREG
 
+	// Inital IRQs at position $08 to avoid visible line 
+	// when disabling the screen
+	_set16im(8, IRQBotPos)
+
 	cli
 
 	rts
