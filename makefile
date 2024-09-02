@@ -36,22 +36,7 @@ disk:
 datablobs:
 	$(MEGATOOL) -p 00000100 \
 		sdtest2/bg20_chr.bin \
-		sdcard/logo_alt_chr.bin \
-		sdcard/hud_chr.bin \
-		sdcard/hudShieldBar_chr.bin \
 		sdcard/font_chr.bin \
-		sdcard/enemy_chr.bin \
-		sdcard/enemyblob_chr.bin \
-		sdcard/enemyspark_chr.bin \
-		sdcard/enemyinfectedswarm_chr.bin \
-		sdcard/enemyminer_chr.bin \
-		sdcard/bull_chr.bin \
-		sdcard/playerrot_chr.bin \
-		sdcard/explosion_chr.bin \
-		sdcard/pickup_chr.bin \
-		sdcard/hudtop_chr.bin \
-		sdcard/hudNumbers_chr.bin \
-		sdcard/spawnin_chr.bin \
 		sdcard/data.bin
 
 	$(MEGATOOL) -a sdcard/data.bin 00000000

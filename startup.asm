@@ -76,59 +76,10 @@ Tmp4:			.word $0000,$0000
 Tmp5:			.word $0000,$0000
 Tmp6:			.word $0000,$0000
 
-GameState:		.byte $00		// Titles / Play / HiScore etc
+GameState:		.byte $00				// Titles / Play / HiScore etc
 GameSubState:	.byte $00
 GameStateTimer:	.byte $00
 GameStateData:	.byte $00,$00,$00
-
-TileYPos:		.byte $00
-
-TextPosX:		.byte $00,$00
-TextPosY:		.byte $00
-TextPtr:		.word $0000
-TextOffs:		.byte $00
-TextEffect:		.byte $00
-
-.macro TextSetPos(x,y) {
-	lda #<x
-	sta TextPosX+0
-	lda #>x
-	sta TextPosX+1
-	lda #y
-	sta TextPosY
-}
-
-.macro TextSetMsgPtr(message) {
-    lda #<message
-    sta TextPtr+0
-    lda #>message
-    sta TextPtr+1
-}
-
-.macro TextDrawSpriteMsg(center, sinoffs, applysin) {
-	.if (applysin)
-	{
-	    clc
-	    lda Irq.VBlankCount
-	    adc #sinoffs
-	    sta TextOffs
-	    lda #$01
-	    sta TextEffect
-	}
-	else
-	{
-		lda #$00
-	    sta TextOffs
-	    sta TextEffect
-	}
-
-	.if(center)
-	{
-		jsr SprCenterXPos
-	}
-
-    jsr SprPrintMsg
-}
 
 //--------------------------------------------------------
 // Main
@@ -142,22 +93,7 @@ TextEffect:		.byte $00
 
 .const bgCharsBegin = SetAssetAddr(CHARS_RAM, $30000)
 .const bg0Chars = AddAsset("FS-C0", "sdtest2/bg20_chr.bin")
-.const logoChars = AddAsset("FS-LOGO", "sdcard/logo_alt_chr.bin")
-.const hudChars = AddAsset("FS-HUD", "sdcard/hud_chr.bin")
-.const hudShieldBarChars = AddAsset("FS-HUDSB", "sdcard/hudShieldBar_chr.bin")
 .const sprFont = AddAsset("FS-F0", "sdcard/font_chr.bin")
-.const sprEnemy = AddAsset("FS-SE0", "sdcard/enemy_chr.bin")
-.const sprEnemyBlob = AddAsset("FS-SE1", "sdcard/enemyblob_chr.bin")
-.const sprEnemySpark = AddAsset("FS-SE2", "sdcard/enemyspark_chr.bin")
-.const sprEnemyInfectedSwarm = AddAsset("FS-SE3", "sdcard/enemyinfectedswarm_chr.bin")
-.const sprEnemyMiner = AddAsset("FS-SE4", "sdcard/enemyminer_chr.bin")
-.const sprBull = AddAsset("FS-S1", "sdcard/bull_chr.bin")
-.const sprPlayer = AddAsset("FS-S2", "sdcard/playerrot_chr.bin")
-.const sprExplo = AddAsset("FS-S3", "sdcard/explosion_chr.bin")
-.const sprPickup = AddAsset("FS-S4", "sdcard/pickup_chr.bin")
-.const sprHudTop = AddAsset("FS-S5", "sdcard/hudtop_chr.bin")
-.const sprHudNumbers = AddAsset("FS-S6", "sdcard/hudNumbers_chr.bin")
-.const sprSpawn = AddAsset("FS-S7", "sdcard/spawnin_chr.bin")
 
 .print "--------"
 
@@ -171,7 +107,6 @@ TextEffect:		.byte $00
 #import "includes/layers_code.s"
 #import "includes/assets_code.s"
 #import "includes/system_code.s"
-#import "includes/sdcard.s"
 #import "includes/fastLoader.s"
 #import "includes/decruncher.s"
 #import "includes/rrbspr_code.s"
@@ -323,11 +258,6 @@ mainloop:
 	DbgBord(0)
 
 	jmp mainloop
-}
-
-// set fadecomplete to 0 for the fade-in
-InitFadeIn: {
-	rts
 }
 
 SwitchGameStates: {
@@ -526,147 +456,10 @@ ClearPalette: {
 		rts
 }
 
-// ----------------------------------------------------------------------------
-//
-
-chrWide:
-	.byte $10,$10,$10,$0f,$10,$0f,$0d,$10,$10,$07,$0c,$10,$0c,$11,$10,$11
-	.byte $10,$11,$10,$10,$0f,$10,$10,$11,$0f,$10,$10,$10,$08,$10,$10,$10
-	.byte $08,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10
-	.byte $10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10
-
-SprCenterXPos: {
-	lda #$00
-	sta TextPosX+0
-	sta TextPosX+1
-
- 	ldy #$00
-oloop:
-	lda (TextPtr),y
-	cmp #$ff
-	beq endtxt
-
-	tax
- 	lda chrWide,x
- 	sta cwidth
-
- 	clc
- 	lda TextPosX+0
- 	adc cwidth:#$00
- 	sta TextPosX+0
- 	lda TextPosX+1
- 	adc #$00
- 	sta TextPosX+1
-
- 	iny
- 	bra oloop
-
-endtxt:
-	// divide by 2
-	lsr TextPosX+1
-	ror TextPosX+0
-
-	sec
-	lda #<(SCREEN_WIDTH/2)
-	sbc TextPosX+0
-	sta TextPosX+0
-	lda #>(SCREEN_WIDTH/2)
-	sbc TextPosX+1
-	sta TextPosX+1
-
-	rts
-}
-
-SprPrintMsg: {
-	lda #(0<<4) | $0f
-	sta RRBSpr.Pal
-	lda #$00
-	sta RRBSpr.SChr
-	lda #<sprFont.baseChar
-	sta RRBSpr.BaseChr+0
-	lda #>sprFont.baseChar
-	sta RRBSpr.BaseChr+1
-
-	lda TextPosX+0
-	sta RRBSpr.XPos+0
-	lda TextPosX+1
-	sta RRBSpr.XPos+1
-
- 	lda TextPosY
- 	sta RRBSpr.YPos+0
-
- 	ldy #$00
-
-oloop:
-	lda (TextPtr),y
-	cmp #$ff
-	beq endtxt
-
-	// mult by 3 to get RRB sprite index
-	sta mult3
-	asl
-	clc
-	adc mult3:#$00
-	sta RRBSpr.SChr
-
-	lda TextEffect
-	beq _noeffect
-
-	clc
-	tya
-	adc TextOffs
-	asl
-	tax
-
-	clc
-	lda sintable2,x
-	cmp #$80
-	ror
-	adc TextPosY
-	sta RRBSpr.YPos+0
-	bra _dodraw
-
-_noeffect:
-	lda TextPosY
-	sta RRBSpr.YPos+0
-
-_dodraw:
-	lda #$01
- 	jsr RRBSpr.Draw
-
- 	lda mult3
- 	tax
- 	lda chrWide,x
- 	sta letterWidth
-
-	clc
-	lda RRBSpr.XPos+0
-	adc letterWidth:#$10
-	sta RRBSpr.XPos+0
-	lda RRBSpr.XPos+1
-	adc #$00
-	sta RRBSpr.XPos+1
-
-	iny
-	bra oloop
-
-endtxt:
-
-	rts
-}
-
 #import "camera.s"
 #import "gsTitles.s"
 
-.segment Data "Text"
-
-sintable2:
-	.fill 256, (sin((i/256) * PI * 2) * 31)
-costable2:
-	.fill 256, (cos((i/256) * PI * 2) * 31)
-
-
-.segment Data "GameState"
+.segment Data "GameState Tables"
 GSIniStateTable:
 	.fillword GSIniStateList.size(), GSIniStateList.get(i)
 GSUpdStateTable:
