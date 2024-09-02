@@ -16,11 +16,11 @@
 //
 // If you use H320 then SCREEN_WIDTH much be <= 360, otherwise <= 720
 #define H320
-.const SCREEN_WIDTH = 336
+.const SCREEN_WIDTH = 320
 
 // If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
 #define V200
-.const SCREEN_HEIGHT = 208
+.const SCREEN_HEIGHT = 200
 
 .const TILES_WIDE = (SCREEN_WIDTH/16)+1
 
@@ -194,6 +194,9 @@ Entry:
 	sta Irq.Tmp7
 
 	jsr System.Initialization1
+
+	jsr System.DisableScreen
+	infLoop()
 
  	sei
 
