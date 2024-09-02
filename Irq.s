@@ -33,10 +33,13 @@ irqHandler:
 
 	inc Irq.VBlankCount
 
+	jsr SetIRQBotPos
+
+	asl $d019
+
 	pla
 	plp
 
-	asl $d019
 	rti
 }
 
