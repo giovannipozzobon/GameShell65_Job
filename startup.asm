@@ -188,36 +188,48 @@ TextEffect:		.byte $00
 .segment Code "Entry"
 Entry: 
 {
-	lda #$00
-	sta Irq.FadeComplete
-	sta Irq.VBlankCount
-	sta Irq.Tmp7
-
 	jsr System.Initialization1
+
+ 	sei
+
+	lda #$7f
+    sta $dc0d
+    sta $dd0d
+
+    lda $dc0d
+    lda $dd0d
+
+    lda #<Irq.irqHandler
+    sta $fffe
+    lda #>Irq.irqHandler
+    sta $ffff
+
+    lda #$01
+    sta $d01a
+
+	// Inital IRQs at position $08 to avoid visible line 
+	// when disabling the screen
+    lda #$08
+	sta $d012
+
+    cli
+
+tloop:
+	lda $d020
+	clc
+	adc #$01
+	and #$0f
+	sta $d020
+
+	lda Irq.VBlankCount
+!:
+	cmp Irq.VBlankCount
+	beq !-
+
+	bra tloop
 
 	jsr System.DisableScreen
 
- 	// sei
-
-	// lda #$7f
-    // sta $dc0d
-    // sta $dd0d
-
-    // lda $dc0d
-    // lda $dd0d
-
-    // lda #<Irq.irqFadeOutHandler
-    // sta $fffe
-    // lda #>Irq.irqFadeOutHandler
-    // sta $ffff
-
-    // lda #$01
-    // sta $d01a
-
-    // lda #$08
-	// sta $d012
-
-    // cli
 
 	// initialise fast load (start drive motor)
 	jsr fl_init
@@ -227,10 +239,6 @@ Entry:
 
 	// done loading. stop drive motor
 	jsr fl_exit
-
-	// wait until fade is complete. loading in xemu will have already ended by now.
-// !:	lda Irq.FadeComplete
-// 	beq !-
 
 	// Update screen positioning if PAL/NTSC has changed
 	jsr System.CenterFrameHorizontally
@@ -264,35 +272,14 @@ Entry:
 
 	jsr InitBGMap
 
-	// Enable Audio DMA
- 	lda #$80
- 	sta $d711
-	
-	lda #$7f                // kill CIA interupts
-    sta $dc0d
-    sta $dd0d
-
-    lda $dc0d               // read interupts to clear them
-    lda $dd0d
-
-    // change pointer to new interrupt
-    lda #>Irq.irqBotHandler
-    sta $ffff
-    lda #<Irq.irqBotHandler
-    sta $fffe
-
     // Disable RSTDELENS
     lda #%01000000
     trb $d05d
 
-    // get the vic II to do raster interupts
-    lda #$01
-    sta $d01a
-
-    // set the interrupt to line 250
+    // set the interrupt to line bottom position
     jsr Irq.SetIRQBotPos
 
-    cli
+	cli
 
 mainloop:
 	lda Irq.VBlankCount
@@ -346,10 +333,6 @@ mainloop:
 
 // set fadecomplete to 0 for the fade-in
 InitFadeIn: {
-	lda #$00
-	sta Irq.FadeComplete
-	sta Irq.VBlankCount
-	sta Irq.Tmp7
 	rts
 }
 

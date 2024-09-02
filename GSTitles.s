@@ -6,7 +6,8 @@
 //
 gsIniTitles: {
 
-	jsr InitFadeIn
+	lda #$00
+	sta Irq.VBlankCount
 
 	lda #$00
 	sta GameSubState
