@@ -60,7 +60,9 @@
 //
 .enum {
 	PAL_FONTHUD,
-	PAL_BG0
+	PAL_BG0,
+
+	NUM_PALETTES
 }
 
 // ------------------------------------------------------------
@@ -520,7 +522,7 @@ ClearPalette: {
 
 		ldx #$00
 !:
-		.for(var p=0; p<14; p++) 
+		.for(var p=0; p<NUM_PALETTES; p++) 
 		{
 			lda Palette + (p * $30) + $000,x
 			sta $d100 + (p * $10),x
@@ -530,7 +532,8 @@ ClearPalette: {
 			sta $d300 + (p * $10),x
 		}
 
-		inx 
+		inx
+		cpx #$10
 		lbne !-
 
 		rts
