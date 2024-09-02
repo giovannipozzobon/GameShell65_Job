@@ -211,25 +211,18 @@ Entry:
 	// when disabling the screen
     lda #$08
 	sta $d012
+    lda #$80
+    trb $d011
 
     cli
 
-tloop:
-	lda $d020
-	clc
-	adc #$01
-	and #$0f
-	sta $d020
-
+	// Wait for IRQ before disabling the screen
 	lda Irq.VBlankCount
 !:
 	cmp Irq.VBlankCount
 	beq !-
 
-	bra tloop
-
 	jsr System.DisableScreen
-
 
 	// initialise fast load (start drive motor)
 	jsr fl_init
@@ -282,6 +275,8 @@ tloop:
 	cli
 
 mainloop:
+	inc $d020
+
 	lda Irq.VBlankCount
 !:
 	cmp Irq.VBlankCount
@@ -523,14 +518,20 @@ ClearPalette: {
 		lda #%00000010 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
 		sta $d070 
 
-		lda #$00
 		ldx #$00
-!:		sta $d100,x
-		sta $d200,x
-		sta $d300,x
+!:
+		.for(var p=0; p<14; p++) 
+		{
+			lda Palette + (p * $30) + $000,x
+			sta $d100 + (p * $10),x
+			lda Palette + (p * $30) + $010,x
+			sta $d200 + (p * $10),x
+			lda Palette + (p * $30) + $020,x
+			sta $d300 + (p * $10),x
+		}
 
 		inx 
-		bne !-
+		lbne !-
 
 		rts
 }
