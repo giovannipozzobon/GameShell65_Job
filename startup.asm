@@ -196,29 +196,28 @@ Entry:
 	jsr System.Initialization1
 
 	jsr System.DisableScreen
-	infLoop()
 
- 	sei
+ 	// sei
 
-	lda #$7f
-    sta $dc0d
-    sta $dd0d
+	// lda #$7f
+    // sta $dc0d
+    // sta $dd0d
 
-    lda $dc0d
-    lda $dd0d
+    // lda $dc0d
+    // lda $dd0d
 
-    lda #<Irq.irqFadeOutHandler
-    sta $fffe
-    lda #>Irq.irqFadeOutHandler
-    sta $ffff
+    // lda #<Irq.irqFadeOutHandler
+    // sta $fffe
+    // lda #>Irq.irqFadeOutHandler
+    // sta $ffff
 
-    lda #$01
-    sta $d01a
+    // lda #$01
+    // sta $d01a
 
-    lda #$08
-	sta $d012
+    // lda #$08
+	// sta $d012
 
-    cli
+    // cli
 
 	// initialise fast load (start drive motor)
 	jsr fl_init
@@ -230,8 +229,8 @@ Entry:
 	jsr fl_exit
 
 	// wait until fade is complete. loading in xemu will have already ended by now.
-!:	lda Irq.FadeComplete
-	beq !-
+// !:	lda Irq.FadeComplete
+// 	beq !-
 
 	// Update screen positioning if PAL/NTSC has changed
 	jsr System.CenterFrameHorizontally
