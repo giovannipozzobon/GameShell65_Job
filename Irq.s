@@ -15,14 +15,21 @@ SetIRQBotPos: {
     // set the interrupt position
     lda System.IRQBotPos+0
     sta $d012
-    lda System.IRQBotPos+1
-    beq _clear_bit
-    lda #$80
-    tsb $d011
-    rts
-_clear_bit:
-    lda #$80
-    trb $d011
+	lda $d011
+	and #$7f
+	sta msb
+
+	lda System.IRQBotPos+1
+    beq _set_msb
+
+	lda msb
+	ora #$80
+	sta msb
+
+_set_msb:
+	lda msb:#$00
+	sta $d011
+
 	rts
 }
 
