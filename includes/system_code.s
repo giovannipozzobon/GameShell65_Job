@@ -1,10 +1,11 @@
+.const FlEnableScreen = $01
+
+
 //--------------------------------------------------------
 // System
 //--------------------------------------------------------
 .namespace System
 {
-
-.const FlEnableScreen = $01
 
 //--------------------------------------------------------
 //
@@ -22,7 +23,8 @@ Flags:			.byte $00
 .segment Code "System Code"
 Initialization1:
 {
-	sei 
+	sei
+	
 	lda #$35
 	sta $01
 

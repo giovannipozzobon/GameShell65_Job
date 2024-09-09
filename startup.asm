@@ -1,6 +1,6 @@
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-#define USE_DBG
+//#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -157,6 +157,9 @@ Entry:
 
 	jsr System.DisableScreen
 
+	lda #$00
+	sta $d020
+
 	// initialise fast load (start drive motor)
 	jsr fl_init
 
@@ -207,8 +210,6 @@ Entry:
 
 	cli
 
-	infLoop()
-
 mainloop:
 	lda Irq.VBlankCount
 !:
@@ -253,6 +254,14 @@ mainloop:
 	// jsr PrintHexByte
 
 	DbgBord(0)
+
+	lda #FlEnableScreen
+	bit System.Flags
+	bne skipEnable
+
+	jsr System.EnableScreen
+
+skipEnable:
 
 	jmp mainloop
 }
@@ -430,27 +439,32 @@ _line_loop:
 }
 
 ClearPalette: {
-		//Bit pairs = CurrPalette, TextPalette, SpritePalette, AltPalette
-		lda #%00000010 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
-		sta $d070 
+	//Bit pairs = CurrPalette, TextPalette, SpritePalette, AltPalette
+	lda #%00000010 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
+	sta $d070 
 
-		ldx #$00
+	ldx #$00
 !:
-		.for(var p=0; p<NUM_PALETTES; p++) 
-		{
-			lda Palette + (p * $30) + $000,x
-			sta $d100 + (p * $10),x
-			lda Palette + (p * $30) + $010,x
-			sta $d200 + (p * $10),x
-			lda Palette + (p * $30) + $020,x
-			sta $d300 + (p * $10),x
-		}
+	.for(var p=0; p<NUM_PALETTES; p++) 
+	{
+		lda Palette + (p * $30) + $000,x
+		sta $d100 + (p * $10),x
+		lda Palette + (p * $30) + $010,x
+		sta $d200 + (p * $10),x
+		lda Palette + (p * $30) + $020,x
+		sta $d300 + (p * $10),x
+	}
 
-		inx
-		cpx #$10
-		lbne !-
+	inx
+	cpx #$10
+	lbne !-
 
-		rts
+	lda #$00
+	sta $d100
+	sta $d200
+	sta $d300
+
+	rts
 }
 
 #import "camera.s"
