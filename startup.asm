@@ -165,7 +165,7 @@ Entry:
 
 	// done loading. stop drive motor
 	jsr fl_exit
-
+	
 	// Update screen positioning if PAL/NTSC has changed
 	jsr System.CenterFrameHorizontally
 	jsr System.CenterFrameVertically
@@ -207,10 +207,7 @@ Entry:
 
 	cli
 
-	lda #$00
-	sta $d020
-
-	jsr System.EnableScreen
+	infLoop()
 
 mainloop:
 	lda Irq.VBlankCount

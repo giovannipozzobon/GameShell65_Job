@@ -6,12 +6,14 @@
 .segment Zeropage "Irq zeropage"
 VBlankCount:	.byte $00
 IRQPos:			.byte $00
+Tmp:			.byte $00
 
 // ------------------------------------------------------------
 //
 .segment Code "Irq code"
 
 SetIRQBotPos: {
+	// 
     // set the interrupt position
     lda System.IRQBotPos+0
     sta $d012

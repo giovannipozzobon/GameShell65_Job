@@ -4,6 +4,8 @@
 .namespace System
 {
 
+.const FlEnableScreen = $01
+
 //--------------------------------------------------------
 //
 .segment Zeropage "System ZP"
@@ -12,6 +14,8 @@ BotBorder:		.word $0000
 IRQTopPos:		.word $0000
 IRQBotPos:		.word $0000
 SprYBase:		.byte $00
+
+Flags:			.byte $00
 
 //--------------------------------------------------------
 //
@@ -84,11 +88,17 @@ Initialization2:
 	lda #>$0a00
 	sta $d065
 
+	lda #%00000101		//Set bit2=FCM for chars >$ff,  bit0=16 bit char indices
+	tsb $d054
+
 	rts
 }
 
 DisableScreen:
 {
+	lda #FlEnableScreen
+	trb Flags
+
 	lda #$00
 	sta $d011
 	rts
@@ -96,10 +106,11 @@ DisableScreen:
 
 EnableScreen:
 {
+	lda #FlEnableScreen
+	tsb Flags
+
 	lda #$1b
 	sta $d011
-	lda #%00000101		//Set bit2=FCM for chars >$ff,  bit0=16 bit char indices
-	tsb $d054
 	rts
 }
 
