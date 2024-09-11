@@ -85,9 +85,9 @@ Initialization2:
 	lda #%10000000		//Clear bit7=H640
 	trb $d031
 
-	lda #<$0a00			// set offset to colour ram so we can use the first 8kb for something else and $10000-$60000 is a continuous playground without the colour ram in the middle
-	sta $d064			// this causes a 1 pixel bug in the bottom right of the screen, so commenting it out again for now.
-	lda #>$0a00
+	lda #<COLOR_OFFSET		// set offset to colour ram so we can use the first 8kb for something else and $10000-$60000 is a continuous playground without the colour ram in the middle
+	sta $d064				// this causes a 1 pixel bug in the bottom right of the screen, so commenting it out again for now.
+	lda #>COLOR_OFFSET
 	sta $d065
 
 	lda #%00000101		//Set bit2=FCM for chars >$ff,  bit0=16 bit char indices

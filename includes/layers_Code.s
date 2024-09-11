@@ -144,6 +144,31 @@ UpdateData: {
 		_set32im(BGMap1TileRAM, src_tile_ptr)
 		_set32im(BGMap1AttribRAM, src_attrib_ptr)
 
+		// Calculate which row data to add this character to, we
+		// are using the MUL hardware here to avoid having a row table.
+		// 
+		// This translates to $d778-A = (ObjPosY>>3) * LOGICAL_OBJS_SIZE
+		//
+		lda Camera.YScroll1+0						// Add ObjPosY >> 3 to charPtr and attribPtr
+		lsr	
+		lsr	
+		lsr	
+		tax									// move yRow into X reg
+		sta $d770 //hw mult A lsb
+		lda #$00
+		sta $d771
+		sta $d772
+		sta $d776
+		lda #<BGROWSIZE //hw mult B lsb
+		sta $d774
+		lda #>BGROWSIZE //hw mult B msb
+		sta $d775
+
+		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to char and attrib ptrs
+		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
+
+
+
 		_set16im(Layer1.ChrOffs, dst_offset)
 		_set16im(Layer1.ChrSize, full_size)
 

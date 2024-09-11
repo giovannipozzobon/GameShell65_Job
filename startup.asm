@@ -1,11 +1,12 @@
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-//#define USE_DBG
+#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
 //
-.const COLOR_RAM = $ff80a00		// + 26*40*2
+.const COLOR_OFFSET = $0000						// + 26*40*2
+.const COLOR_RAM = $ff80000 + COLOR_OFFSET
 
 .const SCREEN_RAM = $50000		// Upto $4000 in size
 
@@ -20,7 +21,7 @@
 
 // If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
 #define V200
-.const SCREEN_HEIGHT = 208
+.const SCREEN_HEIGHT = 200+16
 
 .const TILES_WIDE = (SCREEN_WIDTH/16)+1
 
@@ -51,9 +52,10 @@
 
 // ------------------------------------------------------------
 //
-.const NUM_ROWS = SCREEN_HEIGHT / 8
+.const NUM_ROWS = (SCREEN_HEIGHT / 8) + 2
 
 .const BGROWSIZE = 32 * 2
+.const BGNUMROWS = 64
 
 // ------------------------------------------------------------
 //
@@ -135,9 +137,9 @@ Entry:
     lda $dc0d
     lda $dd0d
 
-    lda #<Irq.irqHandler
+    lda #<Irq.irqBotHandler
     sta $fffe
-    lda #>Irq.irqHandler
+    lda #>Irq.irqBotHandler
     sta $ffff
 
     lda #$01
@@ -237,7 +239,6 @@ mainloop:
 	lda System.TopBorder+1
 	sbc #$00
 	sta $d04f
-
 
 	DbgBord(5)
 
@@ -450,7 +451,7 @@ _line_loop:
     tay
 
     iny
-    cpy #NUM_ROWS/2
+    cpy #BGNUMROWS/2
     lbne _row_loop
 
     rts
@@ -545,9 +546,9 @@ RRBAttribBuffer:
 
 .segment MapRam "Map RAM"
 BGMap1TileRAM:
-	.fill (BGROWSIZE*NUM_ROWS), $00
+	.fill (BGROWSIZE*BGNUMROWS), $00
 BGMap1AttribRAM:
-	.fill (BGROWSIZE*NUM_ROWS), $00
+	.fill (BGROWSIZE*BGNUMROWS), $00
 
 .segment ScreenRam "Screen RAM"
 	.fill (LOGICAL_ROW_SIZE*NUM_ROWS), $00
