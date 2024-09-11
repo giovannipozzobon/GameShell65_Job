@@ -117,6 +117,15 @@ Draw: {
 	_set32im(RRBTileBuffer, chr_ptr)
 	_set32im(RRBAttribBuffer, attrib_ptr)
 
+	lda Camera.YScroll1+0
+	and #$07
+	sta shift
+	
+	lda YPos
+	clc
+	adc shift:#$00
+	sta YPos
+
 	//Set ypos fine
 	lda YPos
 	and #$07

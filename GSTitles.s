@@ -245,6 +245,7 @@ gsDrwTitles: {
 	sta TextPosY
 
 	_add16im(Camera.XScroll, 1, Camera.XScroll)
+	_add16im(Camera.YScroll, 1, Camera.YScroll)
 
 	sec
 	lda #<SCREEN_WIDTH

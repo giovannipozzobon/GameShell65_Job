@@ -221,6 +221,24 @@ mainloop:
 	// Update the display buffers
 	jsr UpdateDisplay
 
+	// Set the fine Y scroll by moving TextYPos up
+	//
+	lda Camera.YScroll1+0
+	and #$07
+#if V200
+	asl						// When in H200 mode, move 2x the number of pixels
+#endif
+	sta shiftUp
+
+	sec
+	lda System.TopBorder+0
+	sbc shiftUp:#$00
+	sta $d04e
+	lda System.TopBorder+1
+	sbc #$00
+	sta $d04f
+
+
 	DbgBord(5)
 
 	jsr RRBSpr.Clear
