@@ -233,21 +233,46 @@ gsUpdTitles: {
 //
 gsDrwTitles: {
 
-	TextSetPos($30,$38)
+	TextSetPos($30,$28)
 	TextSetMsgPtr(testTxt1)
 	TextDrawSpriteMsg(true, 0, true)
 
-	TextSetPos($30,$78)
+	TextSetPos($30,$68)
 	TextSetMsgPtr(testTxt2)
 	TextDrawSpriteMsg(true, 64, true)
 
-	lda #$b0
+	// lda System.TopBorder+0
+	// lsr
+	// lsr
+	// lsr
+	// lsr
+	// and #$0f
+	// tax
+	// lda hexTable,x
+	// sta testTxt3+0
+	// lda System.TopBorder+0
+	// and #$0f
+	// tax
+	// lda hexTable,x
+	// sta testTxt3+1
+
+	// TextSetPos($30,$08)
+	// TextSetMsgPtr(testTxt3)
+	// TextDrawSpriteMsg(true, 0, false)
+
+	lda #$a0
 	sta TextPosY
 
 	_add16im(Camera.XScroll, 1, Camera.XScroll)
 
+	lda Irq.VBlankCount
+	and #$00
+	bne !+
+
 	_add16im(Camera.YScroll, 1, Camera.YScroll)
 	_and16im(Camera.YScroll, $ff, Camera.YScroll)
+
+!:
 
 	sec
 	lda #<SCREEN_WIDTH
@@ -288,6 +313,12 @@ testTxt1:
 testTxt2:
 	.text "[press fire to start]"
 	.byte $ff
+testTxt3:
+	.text "00"
+	.byte $ff
+
+hexTable:
+	.text "0123456789abcdef"
 
 introTxt1:
 	.text "welcome to gameshell65"

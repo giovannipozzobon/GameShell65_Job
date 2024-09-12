@@ -157,7 +157,7 @@ CenterFrameVertically:
 	.var charYPos = Tmp1				// 16bit
 
 	// The half height of the screen in rasterlines is (charHeight / 2) * 2
-	_set16im(NUM_ROWS * 8, halfCharHeight)
+	_set16im(VISIBLE_ROWS * 8, halfCharHeight)
 
 	// Figure out the vertical center of the screen
 
@@ -181,15 +181,15 @@ isPal:
 
 	// hack!!
 	// If we are running on real hardware then adjust char Y start up to avoid 2 pixel Y=0 bug
-	lda $d60f
-	and #%00100000
-	beq !+
+// 	lda $d60f
+// 	and #%00100000
+// 	beq !+
 
-	_add16im(TopBorder, 1, TopBorder)
-	_add16im(BotBorder, 1, BotBorder)
-	_sub16im(charYPos, 2, charYPos)
+// 	_add16im(TopBorder, 1, TopBorder)
+// 	_add16im(BotBorder, 1, BotBorder)
+// 	_sub16im(charYPos, 2, charYPos)
 
-!:
+// !:
 
 	// Set these values on the hardware
 	// TBDRPOS - Top Border

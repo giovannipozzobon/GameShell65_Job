@@ -6,10 +6,6 @@
 
 //--------------------------------------------------------
 //
-.segment Zeropage "Layer ZP"
-
-//--------------------------------------------------------
-//
 .segment Code "Layer Code"
 
 // -------------------------------------------------------
@@ -166,8 +162,6 @@ UpdateData: {
 
 		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to char and attrib ptrs
 		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
-
-
 
 		_set16im(Layer1.ChrOffs, dst_offset)
 		_set16im(Layer1.ChrSize, full_size)

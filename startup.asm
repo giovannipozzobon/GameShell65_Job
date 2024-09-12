@@ -1,11 +1,11 @@
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-#define USE_DBG
+//#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
 //
-.const COLOR_OFFSET = $0000						// + 26*40*2
+.const COLOR_OFFSET = $0a00						// + 26*40*2
 .const COLOR_RAM = $ff80000 + COLOR_OFFSET
 
 .const SCREEN_RAM = $50000		// Upto $4000 in size
@@ -21,7 +21,7 @@
 
 // If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
 #define V200
-.const SCREEN_HEIGHT = 200+16
+.const SCREEN_HEIGHT = 200
 
 .const TILES_WIDE = (SCREEN_WIDTH/16)+1
 
@@ -52,7 +52,8 @@
 
 // ------------------------------------------------------------
 //
-.const NUM_ROWS = (SCREEN_HEIGHT / 8) + 2
+.const VISIBLE_ROWS = (SCREEN_HEIGHT / 8)
+.const NUM_ROWS = VISIBLE_ROWS + 1
 
 .const BGROWSIZE = 32 * 2
 .const BGNUMROWS = 64
@@ -238,6 +239,7 @@ mainloop:
 	sta $d04e
 	lda System.TopBorder+1
 	sbc #$00
+	and #$0f
 	sta $d04f
 
 	DbgBord(5)
