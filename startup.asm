@@ -121,7 +121,7 @@ GameStateData:	.byte $00,$00,$00
 .print "--------"
 
 .const bgCharsBegin = SetAssetAddr(CHARS_RAM, $30000)
-.const bg0Chars = AddAsset("FS-C0", "sdtest2/bg20_chr.bin")
+.const bg0Chars = AddAsset("FS-C0", "sdcard/bg20_chr.bin")
 .const sprFont = AddAsset("FS-F0", "sdcard/font_chr.bin")
 
 .print "--------"
@@ -539,17 +539,15 @@ ClearPixieAttrib:
 .segment Data "Palettes"
 Palette:
 	.import binary "./sdcard/font_pal.bin"
-	.import binary "./sdtest2/bg20_pal.bin"
-
-.print "Palette = " + toHexString(Palette)
+	.import binary "./sdcard/bg20_pal.bin"
 
 .segment Data "BgMap Buffer"
 BgMap:
-	.import binary "./sdtest2/bg2_LV0L0_map.bin"
+	.import binary "./sdcard/bg2_LV0L0_map.bin"
 
 .segment Data "Bg0 Tiles"
 Bg0Tiles:
-	.import binary "./sdtest2/bg20_tiles.bin"
+	.import binary "./sdcard/bg20_tiles.bin"
 
 // ------------------------------------------------------------
 // Ensure these tables DONOT straddle a bank address

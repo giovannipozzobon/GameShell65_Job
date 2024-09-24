@@ -6,8 +6,6 @@ includes/bin/objList_Code_BuildLog.txt
 GAMESH65.d81
 .DS_Store
 .source.txt
-sdtest/*.bin
-sdtest2/*.bin
 sdcard/*.bin
 *.addr
 *.mc
@@ -18,7 +16,4 @@ build/MegaTool/DecrZero.vs
 build/MegaTool/DecrZeroinit.bin
 build/MegaTool/DecrZeroinit.vs
 build/MegaTool/megatool.exe
-includes/.source.txt
-includes/.source.txt
-includes/.source.txt
 includes/.source.txt

@@ -36,7 +36,7 @@ disk:
 
 datablobs:
 	$(MEGATOOL) -p 00000100 \
-		sdtest2/bg20_chr.bin \
+		sdcard/bg20_chr.bin \
 		sdcard/font_chr.bin \
 		sdcard/data.bin
 
@@ -50,25 +50,10 @@ code:
 	$(MEGATOOL) -c -e 00002000 bin/$(APPNAME).prg.addr
 
 map:
-	$(LDTK65) --ncm --workdir "./assets/" --input "bg2.ldtk" --output "sdtest2"
+	$(LDTK65) --ncm --workdir "./assets/" --input "bg2.ldtk" --output "sdcard"
 
 data: map
-	$(PNG65) sprites --ncm --size 32,16 --input "assets/playerrot.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 16,16 --input "assets/pickup.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,16 --input "assets/hudTop.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 16,8 --input "assets/hudNumbers.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/enemies/enemy.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/enemies/enemyBlob.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/enemies/enemySpark.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/enemies/enemyInfectedSwarm.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/enemies/enemyMiner.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/explosion/explosion.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 32,32 --input "assets/spawnin.png" --output "sdcard" --nofill
-	$(PNG65) sprites --ncm --size 16,8 --input "assets/bull.png" --output "sdcard" --nofill
 	$(PNG65) sprites --ncm --size 16,16 --input "assets/font.png" --output "sdcard" --nofill
-	$(PNG65) chars --ncm --size 224,48 --input "assets/logo_alt.png" --output "sdcard" --nofill
-	$(PNG65) chars --ncm --size 224,24 --input "assets/hud.png" --output "sdcard" --nofill
-	$(PNG65) chars --ncm --size 128,8 --input "assets/hudShieldBar.png" --output "sdcard" --nofill
 
 run: all
 	$(XEMU) -autoload -8 $(DISKNAME) -uartmon :4510 -videostd 1
@@ -92,7 +77,6 @@ ethrun: all
 clean:
 	rm -f bin/*
 	rm -f sdcard/*
-	rm -f sdtest2/*
 	rm -f *.D81
 	rm -f *.addr
 	rm -f *.addr.mc
