@@ -9,7 +9,7 @@
 
 //--------------------------------------------------------
 //
-.segment Zeropage "System ZP"
+.segment BSS "System ZP"
 TopBorder:		.word $0000
 BotBorder:		.word $0000
 IRQTopPos:		.word $0000

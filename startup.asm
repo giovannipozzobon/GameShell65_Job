@@ -1,16 +1,19 @@
+// Only Segments Code and Data are included in the .prg, BSS and ZP are virtual
+// and must be proerly initialized.
+//
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-#define USE_DBG
+//#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
 //
-.const COLOR_OFFSET = $0a00						// + 26*40*2
+.const COLOR_OFFSET = $0800		// Offset ColorRam to make bank $10000 contiguous
 .const COLOR_RAM = $ff80000 + COLOR_OFFSET
 
-.const SCREEN_RAM = $50000		// Upto $4000 in size
+.const SCREEN_RAM = $50000		// 
 
-.const CHARS_RAM = $20000		// Upto $c000 in size
+.const CHARS_RAM = $10000
 
 // ------------------------------------------------------------
 // Defines to describe the screen size
@@ -22,8 +25,6 @@
 // If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
 #define V200
 .const SCREEN_HEIGHT = 200
-
-.const TILES_WIDE = (SCREEN_WIDTH/16)+1
 
 // ------------------------------------------------------------
 //
@@ -44,13 +45,27 @@
 #import "includes/layers_Functions.s"
 #import "includes/assets_Functions.s"
 
+// ------------------------------------------------------------
+// Layer constants
 //
-.const NUM_PIXIEWORDS = 250
+// Horizontally scrolling NCM needs full screen width + 1 tile to shift in
+//
+.const NCM_TILES_WIDE = (SCREEN_WIDTH/16)+1
+
+// Maximum number of Pixie words use per row, 1 pixie is 2 words (GOTOX + CHAR)
+//
+.const NUM_PIXIEWORDS = 128
 
 // ------------------------------------------------------------
+// Layer layout for this example
 //
-.const Layer1 = Layer_BG("stars", TILES_WIDE, true, 1)
-.const LayerRRB = Layer_RRB("rrb", NUM_PIXIEWORDS, 1)				// This is capped at 127 max due to index register limitation
+// BG layer for background
+// Pixie layer for you know, pixies
+//
+// Always end with EOL layer
+//
+.const Layer1 = Layer_BG("bg_level", NCM_TILES_WIDE, true, 1)
+.const LayerPixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
 .const LayerEOL = Layer_EOL("eol")
 
 // ------------------------------------------------------------
@@ -298,7 +313,7 @@ UpdateDisplay:
 {
 	jsr Layers.UpdateData.UpdateLayer1
 
-	jsr Layers.UpdateData.UpdateRRB
+	jsr Layers.UpdateData.UpdatePixie
 
 	jsr Layers.UpdateScrollPositions
 
@@ -533,12 +548,9 @@ Bg0Tiles:
 //
 .segment PixieWorkRam "Pixie Work RAM"
 PixieWorkTiles:
-	.fill (LayerRRB.DataSize * NUM_ROWS), $00
+	.fill (LayerPixie.DataSize * NUM_ROWS), $00
 PixieWorkAttrib:
-	.fill (LayerRRB.DataSize * NUM_ROWS), $00
-
-.print "PixieWorkTiles = " + toHexString(PixieWorkTiles)
-.print "PixieWorkAttrib = " + toHexString(PixieWorkAttrib)
+	.fill (LayerPixie.DataSize * NUM_ROWS), $00
 
 .segment MapRam "Map RAM"
 BGMap1TileRAM:

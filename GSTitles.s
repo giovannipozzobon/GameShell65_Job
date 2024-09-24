@@ -9,11 +9,11 @@ TextEffect:		.byte $00
 
 .macro TextSetPos(x,y) {
 	lda #<x
-	sta TextPosX+0
+	sta.zp TextPosX+0
 	lda #>x
-	sta TextPosX+1
+	sta.zp TextPosX+1
 	lda #y
-	sta TextPosY
+	sta.zp TextPosY
 }
 
 .macro TextSetMsgPtr(message) {
@@ -51,7 +51,6 @@ TextEffect:		.byte $00
 // ------------------------------------------------------------
 //
 .const NUM_OBJS1 = 256
-.const NUM_OBJS2 = 256
 
 // ----------------------------------------------------------------------------
 //
@@ -317,9 +316,6 @@ UpdateObjData:
 
 	_set16im((sprFont.baseChar), DrawBaseChr)			// Start charIndx with first pixie char
 
-	lda #$1f*2
-	sta DrawSChr
-
 	// Add Objs into the work ram here
 	//
 	ldx #$00
@@ -347,49 +343,15 @@ UpdateObjData:
 	sbc #$00
 	sta DrawPosX+1
 
+	lda Objs1Spr,x
+	sta DrawSChr
+
 	phx
 	jsr DrawPixie
 	plx
 
 	inx
 	cpx #NUM_OBJS1
-	bne !-
-
-	_set16im((sprFont.baseChar)+2, DrawBaseChr)			// Start charIndx with first pixie char
-
-	// Add Objs into the work ram here
-	//
-	ldx #$00
-!:
-	clc
-	lda Objs2PosXLo,x
-	adc Objs2VelXLo,x
-	sta Objs2PosXLo,x
-	lda Objs2PosXHi,x
-	adc Objs2VelXHi,x
-	and #$01
-	sta Objs2PosXHi,x
-
-	clc
-	lda Objs2PosYLo,x
-	adc Objs2VelY,x
-	sta Objs2PosYLo,x
-	sta DrawPosY+0
-
-	sec
-	lda Objs2PosXLo,x
-	sbc #$20
-	sta DrawPosX+0
-	lda Objs2PosXHi,x
-	sbc #$00
-	sta DrawPosX+1
-
-	phx
-	jsr DrawPixie
-	plx
-
-	inx
-	cpx #NUM_OBJS2
 	bne !-
 
 	rts
@@ -421,6 +383,13 @@ iloop1:
 
 	txa
 	and #$01
+	clc
+	adc #$1e
+	asl
+	sta Objs1Spr,x
+
+	txa
+	and #$01
 	bne ip1
 	lda #$ff
 	sta Objs1VelXLo,x
@@ -440,46 +409,6 @@ id1:
 	inx
 	cpx #NUM_OBJS1
 	bne iloop1
-
-
-	// Init Obj group 2
-	//
-	//
-	_set16im(0, xpos)
-	_set8im(0, ypos)
-
-	ldx #$00
-iloop2:
-	lda xpos
-	sta Objs2PosXLo,x
-	lda xpos+1
-	sta Objs2PosXHi,x
-	lda ypos
-	sta Objs2PosYLo,x
-	lda #$ff
-	sta Objs2VelY,x
-
-	txa
-	and #$01
-	bne ip2
-	lda #$ff
-	sta Objs2VelXLo,x
-	sta Objs2VelXHi,x
-	bra id2
-ip2:
-	lda #$01
-	sta Objs2VelXLo,x
-	lda #$00
-	sta Objs2VelXHi,x
-id2:
-
-	_add16im(xpos, 14, xpos)
-	_and16im(xpos, $1ff, xpos)
-	_add8im(ypos, 5, ypos)
-
-	inx
-	cpx #NUM_OBJS2
-	bne iloop2
 
 	rts
 }
@@ -541,18 +470,8 @@ Objs1VelXHi:
 	.fill NUM_OBJS1, 0
 Objs1VelY:
 	.fill NUM_OBJS1, 0
+Objs1Spr:
+	.fill NUM_OBJS1, 0
 
-Objs2PosXLo:
-	.fill NUM_OBJS2, 0
-Objs2PosXHi:
-	.fill NUM_OBJS2, 0
-Objs2PosYLo:
-	.fill NUM_OBJS2, 0
-Objs2VelXLo:
-	.fill NUM_OBJS2, 0
-Objs2VelXHi:
-	.fill NUM_OBJS2, 0
-Objs2VelY:
-	.fill NUM_OBJS2, 0
 
 

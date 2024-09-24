@@ -34,8 +34,8 @@ ClearWorkPixies: {
 	lda rowAttribPtr+1
 	sta PixieRowAttribPtrHi,x
 
-	_add16im(rowScreenPtr, LayerRRB.DataSize, rowScreenPtr)
-	_add16im(rowAttribPtr, LayerRRB.DataSize, rowAttribPtr)
+	_add16im(rowScreenPtr, LayerPixie.DataSize, rowScreenPtr)
+	_add16im(rowAttribPtr, LayerPixie.DataSize, rowAttribPtr)
 	
 	inx
 	cpx #NUM_ROWS
@@ -51,17 +51,16 @@ Job:
 		// Tile
 		DMACopyJob(
 			ClearPixieTile, 
-			PixieWorkTiles + (r * LayerRRB.DataSize),
-			LayerRRB.DataSize,
+			PixieWorkTiles + (r * LayerPixie.DataSize),
+			LayerPixie.DataSize,
 			true, false)
 		// Atrib
 		DMACopyJob(
 			ClearPixieAttrib,
-			PixieWorkAttrib + (r * LayerRRB.DataSize),
-			LayerRRB.DataSize,
+			PixieWorkAttrib + (r * LayerPixie.DataSize),
+			LayerPixie.DataSize,
 			(r!=(NUM_ROWS-1)), false)
 	}
- .print ("RRBClear DMAjob = " + (* - Job))
 }	
 
 // ------------------------------------------------------------

@@ -178,15 +178,15 @@ UpdateData: {
 		rts
 	}
 
-	UpdateRRB: {
+	UpdatePixie: {
 		_set32im(PixieWorkTiles, src_tile_ptr)
 		_set32im(PixieWorkAttrib, src_attrib_ptr)
 
-		_set16im(LayerRRB.GotoXOffs, dst_offset)
-		_set16im(LayerRRB.DataSize, copy_length)
+		_set16im(LayerPixie.GotoXOffs, dst_offset)
+		_set16im(LayerPixie.DataSize, copy_length)
 
 		_set16im(0, src_offset)
-		_set16im(LayerRRB.DataSize, src_stride)
+		_set16im(LayerPixie.DataSize, src_stride)
 
 		jsr CopyLayerChunks
 

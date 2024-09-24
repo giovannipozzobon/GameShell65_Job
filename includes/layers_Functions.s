@@ -3,7 +3,7 @@
 .var 	LOGICAL_ROW_SIZE = 0
 .var	FIRST_LAYER = true
 
-.enum {ChrLayer, RRBLayer, EOLLayer}
+.enum {ChrLayer, PixieLayer, EOLLayer}
 .struct Layer { id, name, palIdx, num, firstLayer, layerType, GotoXOffs, ChrOffs, ChrSize, DataSize, isNCM }
 
 .var LayerList = List()
@@ -66,7 +66,7 @@
 	.return LayerList.get(id)
 }
 
-.function Layer_RRB (name, numWords, palIdx) {
+.function Layer_PIXIE (name, numWords, palIdx) {
 	//id, name, address, spriteSet, startFrame, endFrame 
 	.var id = LayerList.size()
 	.var dataSize = numWords * 2	 		// numWords [16bit chars]
@@ -77,7 +77,7 @@
 		palIdx,
 		numWords,
 		FIRST_LAYER,
-		RRBLayer,
+		PixieLayer,
 		LOGICAL_ROW_SIZE,
 		LOGICAL_ROW_SIZE + 2,
 		dataSize,
