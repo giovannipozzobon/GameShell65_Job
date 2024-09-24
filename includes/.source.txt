@@ -4,8 +4,9 @@
 
 DrawPosX:		.byte $00,$00
 DrawPosY:		.byte $00,$00
-DrawChr:        .byte $00,$00
+DrawBaseChr:    .byte $00,$00
 DrawPal:        .byte $00
+DrawSChr:		.byte $00
 
 // ------------------------------------------------------------
 //
@@ -77,10 +78,18 @@ DrawPixie:
 	.var yShift = Tmp2+2				// 8bit
 	.var gotoXmask = Tmp2+3				// 8bit
 
-	_set16(DrawChr, charIndx)			// Start charIndx with first pixie char
+	_set16(DrawBaseChr, charIndx)		// Start charIndx with first pixie char
 
 	_set32im(PixieWorkTiles, tilePtr)	// Set base full 32 bit pointers
 	_set32im(PixieWorkAttrib, attribPtr)
+
+	clc
+	lda charIndx+0
+	adc DrawSChr
+	sta charIndx+0
+	lda charIndx+1
+	adc #$00
+	sta charIndx+1
 
 	lda Camera.YScroll1+0
 	and #$07

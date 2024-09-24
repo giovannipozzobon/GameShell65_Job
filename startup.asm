@@ -45,7 +45,7 @@
 #import "includes/assets_Functions.s"
 
 //
-.const NUM_PIXIEWORDS = 160
+.const NUM_PIXIEWORDS = 250
 
 // ------------------------------------------------------------
 //
