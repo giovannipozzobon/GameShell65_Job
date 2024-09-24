@@ -1,9 +1,10 @@
+//--------------------------------------------------------
+//
 .const FlEnableScreen = $01
-
 
 //--------------------------------------------------------
 // System
-//--------------------------------------------------------
+//
 .namespace System
 {
 
@@ -12,9 +13,7 @@
 .segment BSS "System ZP"
 TopBorder:		.word $0000
 BotBorder:		.word $0000
-IRQTopPos:		.word $0000
 IRQBotPos:		.word $0000
-SprYBase:		.byte $00
 
 Flags:			.byte $00
 
@@ -44,7 +43,7 @@ Initialization1:
 
 	// Inital IRQs at position $08 to avoid visible line 
 	// when disabling the screen
-	_set16im(8, IRQBotPos)
+	_set16im($08, IRQBotPos)
 
 	cli
 
@@ -85,8 +84,8 @@ Initialization2:
 	lda #%10000000		//Clear bit7=H640
 	trb $d031
 
-	lda #<COLOR_OFFSET		// set offset to colour ram so we can use the first 8kb for something else and $10000-$60000 is a continuous playground without the colour ram in the middle
-	sta $d064				// this causes a 1 pixel bug in the bottom right of the screen, so commenting it out again for now.
+	lda #<COLOR_OFFSET	// set offset to colour ram so we can use the first 8kb for something else and $10000-$60000 is a continuous playground without the colour ram in the middle
+	sta $d064			// this causes a 1 pixel bug in the bottom right of the screen, so commenting it out again for now.
 	lda #>COLOR_OFFSET
 	sta $d065
 
@@ -132,14 +131,6 @@ CenterFrameHorizontally:
 	tsb $d05d
 
 	// TEXTXPOS - Text X Pos
-
-	// If running on real hardware, shift screen left SCALED pixel
-	lda $d60f
-	and #%00100000
-	beq !+
-	_sub16im(charXPos, HPIXELSCALE, charXPos)
-!:
-
 	lda charXPos+0
 	sta $d04c
 	lda #%00001111
@@ -157,20 +148,18 @@ CenterFrameVertically:
 	.var charYPos = Tmp1				// 16bit
 
 	// The half height of the screen in rasterlines is (charHeight / 2) * 2
-	_set16im(VISIBLE_ROWS * 8, halfCharHeight)
+	_set16im(SCREEN_HEIGHT, halfCharHeight)
 
 	// Figure out the vertical center of the screen
 
 	// PAL values
 	_set16im(304, verticalCenter)
-	_set8im($fe, SprYBase)
 
 	bit $d06f
 	bpl isPal
 
 	// NTSC values
 	_set16im(242, verticalCenter)
-	_set8im($16, SprYBase)
 
 isPal:
 
@@ -178,18 +167,6 @@ isPal:
 	_add16(verticalCenter, halfCharHeight, BotBorder)
 
 	_set16(TopBorder, charYPos)
-
-	// hack!!
-	// If we are running on real hardware then adjust char Y start up to avoid 2 pixel Y=0 bug
-// 	lda $d60f
-// 	and #%00100000
-// 	beq !+
-
-// 	_add16im(TopBorder, 1, TopBorder)
-// 	_add16im(BotBorder, 1, BotBorder)
-// 	_sub16im(charYPos, 2, charYPos)
-
-// !:
 
 	// Set these values on the hardware
 	// TBDRPOS - Top Border
@@ -216,20 +193,10 @@ isPal:
 	lda charYPos+1
 	tsb $d04f
 
-	_add16im(TopBorder, 1, IRQTopPos)
-
-	lsr IRQTopPos+1
-	ror IRQTopPos+0
-
 	_add16im(BotBorder, 1, IRQBotPos)
 
 	lsr IRQBotPos+1
 	ror IRQBotPos+0
-
-	clc
-	lda SprYBase
-	adc IRQTopPos+0
-	sta SprYBase
 
 	rts
 }

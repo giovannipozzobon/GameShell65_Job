@@ -5,8 +5,6 @@
 //
 .segment Zeropage "Irq zeropage"
 VBlankCount:	.byte $00
-IRQPos:			.byte $00
-Tmp:			.byte $00
 
 // ------------------------------------------------------------
 //

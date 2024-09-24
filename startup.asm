@@ -30,7 +30,6 @@
 //
 .segmentdef Zeropage [start=$02, min=$02, max=$fb, virtual]
 .segmentdef Code [start=$2000, max=$7fff]
-.segmentdef Mapped8000 [start=$8000, max=$9fff, virtual]
 .segmentdef Data [start=$a000, max=$cfff]
 .segmentdef BSS [start=$e000, max=$f400, virtual]
 
@@ -48,9 +47,14 @@
 // ------------------------------------------------------------
 // Layer constants
 //
-// Horizontally scrolling NCM needs full screen width + 1 tile to shift in
+// Horizontally scrolling NCM needs full screen width + 1 tile to shift in when scrolling
 //
-.const NCM_TILES_WIDE = (SCREEN_WIDTH/16)+1
+.const NCM_TILES_WIDE = (SCREEN_WIDTH/16) + 1
+
+// Vertically we want to show the full screen height (used to define the top and bottom borders)
+// but the actual number of rows is + 1 so we can shift in the new row when scrolling
+//
+.const NUM_ROWS = (SCREEN_HEIGHT / 8) + 1
 
 // Maximum number of Pixie words use per row, 1 pixie is 2 words (GOTOX + CHAR)
 //
@@ -59,24 +63,24 @@
 // ------------------------------------------------------------
 // Layer layout for this example
 //
-// BG layer for background
-// Pixie layer for you know, pixies
+// 1) BG layer for background
+// 2) Pixie layer for you know, pixies
 //
-// Always end with EOL layer
+// 3) Always end with EOL layer
 //
 .const Layer1 = Layer_BG("bg_level", NCM_TILES_WIDE, true, 1)
 .const LayerPixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
 .const LayerEOL = Layer_EOL("eol")
 
 // ------------------------------------------------------------
+// Static BG Map sizes, in this example we are expanding the tile / map
+// set into a static buffer, for a real game you'd want to be more fancy
 //
-.const VISIBLE_ROWS = (SCREEN_HEIGHT / 8)
-.const NUM_ROWS = VISIBLE_ROWS + 1
-
-.const BGROWSIZE = 32 * 2
-.const BGNUMROWS = 64
+.const BGROWSIZE = (512 / 16) * 2
+.const BGNUMROWS = (512 / 8)
 
 // ------------------------------------------------------------
+// Number of NCM palettes that we are using
 //
 .enum {
 	PAL_FONTHUD,
@@ -89,13 +93,17 @@
 //
 .segment Zeropage "Main zeropage"
 
-Tmp:			.word $0000,$0000		// General reusable data
+Tmp:			.word $0000,$0000		// General reusable data (Don't use in IRQ)
 Tmp1:			.word $0000,$0000
 Tmp2:			.word $0000,$0000
 Tmp3:			.word $0000,$0000
 Tmp4:			.word $0000,$0000
 Tmp5:			.word $0000,$0000
 Tmp6:			.word $0000,$0000
+
+// ------------------------------------------------------------
+//
+.segment BSS "Main"
 
 GameState:		.byte $00				// Titles / Play / HiScore etc
 GameSubState:	.byte $00

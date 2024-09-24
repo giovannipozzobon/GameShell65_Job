@@ -404,12 +404,6 @@ LogOffsLo:
 LogOffsHi:
 	.fill LayerList.size(), >LayerList.get(i).GotoXOffs
 
-.segment Data "Layer Tables"
-LayerRowOffsLo:
-	.fill NUM_ROWS, <[(i * LOGICAL_ROW_SIZE)]
-LayerRowOffsHi:
-	.fill NUM_ROWS, >[(i * LOGICAL_ROW_SIZE)]
-
 .segment BSS "Layer BSS"
 ScrollUpdate:
 	.fill LayerList.size(), $00
