@@ -105,14 +105,13 @@ endtxt:
 }
 
 SprPrintMsg: {
-//	lda #(0<<4) | $0f
-//	sta RRBSpr.Pal
-	// lda #$00
-	// sta RRBSpr.SChr
+	lda #$00
+	sta DrawSChr
+
 	lda #<sprFont.baseChar
-	sta DrawChr+0
+	sta DrawBaseChr+0
 	lda #>sprFont.baseChar
-	sta DrawChr+1
+	sta DrawBaseChr+1
 
 	lda TextPosX+0
 	sta DrawPosX+0
@@ -130,11 +129,9 @@ oloop:
 	beq endtxt
 
 	// mult by 3 to get RRB sprite index
-	sta mult3
+	sta mult2
 	asl
-	clc
-	adc mult3:#$00
-//	sta RRBSpr.SChr
+	sta DrawSChr
 
 	lda TextEffect
 	beq _noeffect
@@ -162,7 +159,7 @@ _dodraw:
  	jsr DrawPixie
 	ply
 
- 	lda mult3
+ 	lda mult2:#$00
  	tax
  	lda chrWide,x
  	sta letterWidth
@@ -246,7 +243,7 @@ gsDrwTitles: {
 
 	_set8im($0f, DrawPal)
 
-	// jsr UpdateObjData
+	jsr UpdateObjData
 
 	TextSetPos($30,$28)
 	TextSetMsgPtr(testTxt1)
@@ -318,7 +315,10 @@ UpdateObjData:
 	lda #$00
 	sta DrawPosY+1
 
-	_set16im((sprFont.baseChar), DrawChr)			// Start charIndx with first pixie char
+	_set16im((sprFont.baseChar), DrawBaseChr)			// Start charIndx with first pixie char
+
+	lda #$1f*2
+	sta DrawSChr
 
 	// Add Objs into the work ram here
 	//
@@ -355,7 +355,7 @@ UpdateObjData:
 	cpx #NUM_OBJS1
 	bne !-
 
-	_set16im((sprFont.baseChar)+2, DrawChr)			// Start charIndx with first pixie char
+	_set16im((sprFont.baseChar)+2, DrawBaseChr)			// Start charIndx with first pixie char
 
 	// Add Objs into the work ram here
 	//
