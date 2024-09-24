@@ -179,8 +179,8 @@ UpdateData: {
 	}
 
 	UpdateRRB: {
-		_set32im(RRBTileBuffer, src_tile_ptr)
-		_set32im(RRBAttribBuffer, src_attrib_ptr)
+		_set32im(PixieWorkTiles, src_tile_ptr)
+		_set32im(PixieWorkAttrib, src_attrib_ptr)
 
 		_set16im(LayerRRB.GotoXOffs, dst_offset)
 		_set16im(LayerRRB.DataSize, copy_length)

@@ -1,6 +1,6 @@
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-//#define USE_DBG
+#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -34,8 +34,8 @@
 .segmentdef BSS [start=$e000, max=$f400, virtual]
 
 .segmentdef ScreenRam [start=SCREEN_RAM, virtual]
-.segmentdef RRBWorkRam [startAfter="ScreenRam", max=SCREEN_RAM+$ffff, virtual]
-.segmentdef MapRam [startAfter="RRBWorkRam", max=SCREEN_RAM+$ffff, virtual]
+.segmentdef PixieWorkRam [startAfter="ScreenRam", max=SCREEN_RAM+$ffff, virtual]
+.segmentdef MapRam [startAfter="PixieWorkRam", max=SCREEN_RAM+$ffff, virtual]
 
 .cpu _45gs02				
 
@@ -44,10 +44,13 @@
 #import "includes/layers_Functions.s"
 #import "includes/assets_Functions.s"
 
+//
+.const NUM_PIXIEWORDS = 160
+
 // ------------------------------------------------------------
 //
 .const Layer1 = Layer_BG("stars", TILES_WIDE, true, 1)
-.const LayerRRB = Layer_RRB("rrb", 63, 1)				// This is capped at 127 max due to index register limitation
+.const LayerRRB = Layer_RRB("rrb", NUM_PIXIEWORDS, 1)				// This is capped at 127 max due to index register limitation
 .const LayerEOL = Layer_EOL("eol")
 
 // ------------------------------------------------------------
@@ -112,8 +115,8 @@ GameStateData:	.byte $00,$00,$00
 #import "includes/system_code.s"
 #import "includes/fastLoader.s"
 #import "includes/decruncher.s"
-#import "includes/rrbspr_code.s"
 #import "includes/keyb_code.s"
+#import "includes/pixie_code.s"
 
 // ------------------------------------------------------------
 //
@@ -194,7 +197,7 @@ Entry:
 
 	jsr Layers.UpdateData.InitEOL
 
-	jsr ClearPalette
+	jsr InitPalette
 
 	TextSetPos(0,0)
 //	TextPrintMsg(imessage)
@@ -243,10 +246,6 @@ mainloop:
 	sta $d04f
 
 	DbgBord(5)
-
-	jsr RRBSpr.Clear
-
-	DbgBord(6)
 
 	// jsr Player.UpdDPad
 
@@ -459,9 +458,9 @@ _line_loop:
     rts
 }
 
-ClearPalette: {
+InitPalette: {
 	//Bit pairs = CurrPalette, TextPalette, SpritePalette, AltPalette
-	lda #%00000010 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
+	lda #%00000000 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
 	sta $d070 
 
 	ldx #$00
@@ -499,26 +498,27 @@ GSUpdStateTable:
 GSDrwStateTable:
 	.fillword GSDrwStateList.size(), GSDrwStateList.get(i)
 
-.segment Data "RRB Tile Clear"
-RRBTileClear: {
-	.for(var r=0; r<LayerRRB.DataSize/2; r++) {
-		// GOTOX position
+// ------------------------------------------------------------
+//
+.segment Code "RRB Clear Data"
+ClearPixieTile:
+	.for(var c = 0;c < NUM_PIXIEWORDS;c++) 
+	{
 		.byte <SCREEN_WIDTH,>SCREEN_WIDTH
 	}
-}
 
-.segment Data "RRB Attrib Clear"
-RRBAttribClear: {
-	.for(var r=0; r<LayerRRB.DataSize/2; r++) {
-		// GOTOX position
-		.byte $94,$00
+ClearPixieAttrib:
+	.for(var c = 0;c < NUM_PIXIEWORDS;c++) 
+	{
+		.byte $90,$00
 	}
-}
 
 .segment Data "Palettes"
 Palette:
 	.import binary "./sdcard/font_pal.bin"
 	.import binary "./sdtest2/bg20_pal.bin"
+
+.print "Palette = " + toHexString(Palette)
 
 .segment Data "BgMap Buffer"
 BgMap:
@@ -528,23 +528,17 @@ BgMap:
 Bg0Tiles:
 	.import binary "./sdtest2/bg20_tiles.bin"
 
-.segment Mapped8000 "RRB Work Ram"
-RRBCount:
-	.fill NUM_ROWS, 0
-RRBTileRowTableLo:
-	.fill NUM_ROWS, 0
-RRBTileRowTableHi:
-	.fill NUM_ROWS, 0
-RRBAttribRowTableLo:
-	.fill NUM_ROWS, 0
-RRBAttribRowTableHi:
-	.fill NUM_ROWS, 0
+// ------------------------------------------------------------
+// Ensure these tables DONOT straddle a bank address
+//
+.segment PixieWorkRam "Pixie Work RAM"
+PixieWorkTiles:
+	.fill (LayerRRB.DataSize * NUM_ROWS), $00
+PixieWorkAttrib:
+	.fill (LayerRRB.DataSize * NUM_ROWS), $00
 
-.segment RRBWorkRam "RRB Working Buffers"
-RRBTileBuffer:										// Layer RRB
-	.fill LayerRRB.DataSize * NUM_ROWS, $00
-RRBAttribBuffer:
-	.fill LayerRRB.DataSize * NUM_ROWS, $00
+.print "PixieWorkTiles = " + toHexString(PixieWorkTiles)
+.print "PixieWorkAttrib = " + toHexString(PixieWorkAttrib)
 
 .segment MapRam "Map RAM"
 BGMap1TileRAM:

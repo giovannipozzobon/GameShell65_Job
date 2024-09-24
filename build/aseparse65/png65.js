@@ -153,7 +153,7 @@ function sortFCMDataForSprites(png, sw, sh, palette, charData, isSprite) {
             spriteData.charindices.push(charIndex+1)
             
             for(var sx=0; sx<sw; sx++){
-                for(var j=0; j<64;j++) charNewData.push(0)
+                //for(var j=0; j<64;j++) charNewData.push(0)
                 charIndex++
 
                 for(var sy=0; sy<sh; sy++){
@@ -182,7 +182,7 @@ function sortFCMDataForSprites(png, sw, sh, palette, charData, isSprite) {
                 }
             }
         }
-        for(var j=0; j<64;j++) charNewData.push(0)
+        //for(var j=0; j<64;j++) charNewData.push(0)
 
         return {    data:charNewData, 
                     charColors:charData.charColors, 
@@ -218,7 +218,7 @@ function sortNCMDataForSprites(png, sw, sh, palette, charData) {
 
 
             for(var sx=0; sx<sw; sx++){
-                for(var j=0; j<64;j++) charNewData.push(0)
+                //for(var j=0; j<64;j++) charNewData.push(0)
                 charIndex++
 
                 for(var sy=0; sy<sh; sy++){
@@ -245,7 +245,7 @@ function sortNCMDataForSprites(png, sw, sh, palette, charData) {
                 }
             }
         }
-        for(var j=0; j<64;j++) charNewData.push(0)
+        //for(var j=0; j<64;j++) charNewData.push(0)
 
 
         return {    data:charNewData, 
@@ -348,7 +348,7 @@ function getNCMDataForSprites(png, palette, wid, hei) {
             for(var tx=0; tx<wid; tx++) 
             {
                 // Add a blank character to top of each column
-                for(var j=0; j<64;j++) data.push(0)
+                // for(var j=0; j<64;j++) data.push(0)
 
                 for(var ty=0; ty<hei; ty++)
                 {
@@ -406,7 +406,7 @@ function getNCMDataForSprites(png, palette, wid, hei) {
         if (spry == (png.height - (8 * hei)))
         {
             // Add a blank character to top of each column
-            for(var j=0; j<64;j++) data.push(0)
+            // for(var j=0; j<64;j++) data.push(0)
         }
     }
 

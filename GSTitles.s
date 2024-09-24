@@ -48,6 +48,11 @@ TextEffect:		.byte $00
     jsr SprPrintMsg
 }
 
+// ------------------------------------------------------------
+//
+.const NUM_OBJS1 = 256
+.const NUM_OBJS2 = 256
+
 // ----------------------------------------------------------------------------
 //
 
@@ -100,22 +105,22 @@ endtxt:
 }
 
 SprPrintMsg: {
-	lda #(0<<4) | $0f
-	sta RRBSpr.Pal
-	lda #$00
-	sta RRBSpr.SChr
+//	lda #(0<<4) | $0f
+//	sta RRBSpr.Pal
+	// lda #$00
+	// sta RRBSpr.SChr
 	lda #<sprFont.baseChar
-	sta RRBSpr.BaseChr+0
+	sta DrawChr+0
 	lda #>sprFont.baseChar
-	sta RRBSpr.BaseChr+1
+	sta DrawChr+1
 
 	lda TextPosX+0
-	sta RRBSpr.XPos+0
+	sta DrawPosX+0
 	lda TextPosX+1
-	sta RRBSpr.XPos+1
+	sta DrawPosX+1
 
  	lda TextPosY
- 	sta RRBSpr.YPos+0
+ 	sta DrawPosY+0
 
  	ldy #$00
 
@@ -129,7 +134,7 @@ oloop:
 	asl
 	clc
 	adc mult3:#$00
-	sta RRBSpr.SChr
+//	sta RRBSpr.SChr
 
 	lda TextEffect
 	beq _noeffect
@@ -145,16 +150,17 @@ oloop:
 	cmp #$80
 	ror
 	adc TextPosY
-	sta RRBSpr.YPos+0
+	sta DrawPosY+0
 	bra _dodraw
 
 _noeffect:
 	lda TextPosY
-	sta RRBSpr.YPos+0
+	sta DrawPosY+0
 
 _dodraw:
-	lda #$01
- 	jsr RRBSpr.Draw
+	phy
+ 	jsr DrawPixie
+	ply
 
  	lda mult3
  	tax
@@ -162,12 +168,12 @@ _dodraw:
  	sta letterWidth
 
 	clc
-	lda RRBSpr.XPos+0
+	lda DrawPosX+0
 	adc letterWidth:#$10
-	sta RRBSpr.XPos+0
-	lda RRBSpr.XPos+1
+	sta DrawPosX+0
+	lda DrawPosX+1
 	adc #$00
-	sta RRBSpr.XPos+1
+	sta DrawPosX+1
 
 	iny
 	bra oloop
@@ -194,6 +200,8 @@ gsIniTitles: {
 	sta GameStateData+0
 	sta GameStateData+1
 	sta GameStateData+2
+
+	jsr InitObjData
 
 	rts
 }
@@ -232,6 +240,13 @@ gsUpdTitles: {
 // ------------------------------------------------------------
 //
 gsDrwTitles: {
+
+	// Clear the work Pixie ram using DMA
+	jsr ClearWorkPixies
+
+	_set8im($0f, DrawPal)
+
+	// jsr UpdateObjData
 
 	TextSetPos($30,$28)
 	TextSetMsgPtr(testTxt1)
@@ -296,6 +311,180 @@ gsDrwTitles: {
 	rts
 }
 
+// ------------------------------------------------------------
+//
+UpdateObjData:
+{
+	lda #$00
+	sta DrawPosY+1
+
+	_set16im((sprFont.baseChar), DrawChr)			// Start charIndx with first pixie char
+
+	// Add Objs into the work ram here
+	//
+	ldx #$00
+!:
+	clc
+	lda Objs1PosXLo,x
+	adc Objs1VelXLo,x
+	sta Objs1PosXLo,x
+	lda Objs1PosXHi,x
+	adc Objs1VelXHi,x
+	and #$01
+	sta Objs1PosXHi,x
+
+	clc
+	lda Objs1PosYLo,x
+	adc Objs1VelY,x
+	sta Objs1PosYLo,x
+	sta DrawPosY+0
+
+	sec
+	lda Objs1PosXLo,x
+	sbc #$20
+	sta DrawPosX+0
+	lda Objs1PosXHi,x
+	sbc #$00
+	sta DrawPosX+1
+
+	phx
+	jsr DrawPixie
+	plx
+
+	inx
+	cpx #NUM_OBJS1
+	bne !-
+
+	_set16im((sprFont.baseChar)+2, DrawChr)			// Start charIndx with first pixie char
+
+	// Add Objs into the work ram here
+	//
+	ldx #$00
+!:
+	clc
+	lda Objs2PosXLo,x
+	adc Objs2VelXLo,x
+	sta Objs2PosXLo,x
+	lda Objs2PosXHi,x
+	adc Objs2VelXHi,x
+	and #$01
+	sta Objs2PosXHi,x
+
+	clc
+	lda Objs2PosYLo,x
+	adc Objs2VelY,x
+	sta Objs2PosYLo,x
+	sta DrawPosY+0
+
+	sec
+	lda Objs2PosXLo,x
+	sbc #$20
+	sta DrawPosX+0
+	lda Objs2PosXHi,x
+	sbc #$00
+	sta DrawPosX+1
+
+	phx
+	jsr DrawPixie
+	plx
+
+	inx
+	cpx #NUM_OBJS2
+	bne !-
+
+	rts
+}
+
+// ------------------------------------------------------------
+//
+InitObjData:
+{
+    .var xpos = Tmp       // 16bit
+    .var ypos = Tmp+2     // 8bit
+
+	// Init Obj group 1
+	//
+	//
+	_set16im(0, xpos)
+	_set8im(0, ypos)
+
+	ldx #$00
+iloop1:
+	lda xpos
+	sta Objs1PosXLo,x
+	lda xpos+1
+	sta Objs1PosXHi,x
+	lda ypos
+	sta Objs1PosYLo,x
+	lda #1
+	sta Objs1VelY,x
+
+	txa
+	and #$01
+	bne ip1
+	lda #$ff
+	sta Objs1VelXLo,x
+	sta Objs1VelXHi,x
+	bra id1
+ip1:
+	lda #$01
+	sta Objs1VelXLo,x
+	lda #$00
+	sta Objs1VelXHi,x
+id1:
+
+	_add16im(xpos, -14, xpos)
+	_and16im(xpos, $1ff, xpos)
+	_add8im(ypos, 5, ypos)
+
+	inx
+	cpx #NUM_OBJS1
+	bne iloop1
+
+
+	// Init Obj group 2
+	//
+	//
+	_set16im(0, xpos)
+	_set8im(0, ypos)
+
+	ldx #$00
+iloop2:
+	lda xpos
+	sta Objs2PosXLo,x
+	lda xpos+1
+	sta Objs2PosXHi,x
+	lda ypos
+	sta Objs2PosYLo,x
+	lda #$ff
+	sta Objs2VelY,x
+
+	txa
+	and #$01
+	bne ip2
+	lda #$ff
+	sta Objs2VelXLo,x
+	sta Objs2VelXHi,x
+	bra id2
+ip2:
+	lda #$01
+	sta Objs2VelXLo,x
+	lda #$00
+	sta Objs2VelXHi,x
+id2:
+
+	_add16im(xpos, 14, xpos)
+	_and16im(xpos, $1ff, xpos)
+	_add8im(ypos, 5, ypos)
+
+	inx
+	cpx #NUM_OBJS2
+	bne iloop2
+
+	rts
+}
+
+// ---
 .segment Data "GameState Titles"
 
 sintable2:
@@ -335,4 +524,35 @@ introTxt4:
 	.text "now go build your game "
 	.byte $1f
 	.byte $ff
+
+// ------------------------------------------------------------
+//
+.segment BSS "Obj Data"
+
+Objs1PosXLo:
+	.fill NUM_OBJS1, 0
+Objs1PosXHi:
+	.fill NUM_OBJS1, 0
+Objs1PosYLo:
+	.fill NUM_OBJS1, 0
+Objs1VelXLo:
+	.fill NUM_OBJS1, 0
+Objs1VelXHi:
+	.fill NUM_OBJS1, 0
+Objs1VelY:
+	.fill NUM_OBJS1, 0
+
+Objs2PosXLo:
+	.fill NUM_OBJS2, 0
+Objs2PosXHi:
+	.fill NUM_OBJS2, 0
+Objs2PosYLo:
+	.fill NUM_OBJS2, 0
+Objs2VelXLo:
+	.fill NUM_OBJS2, 0
+Objs2VelXHi:
+	.fill NUM_OBJS2, 0
+Objs2VelY:
+	.fill NUM_OBJS2, 0
+
 
