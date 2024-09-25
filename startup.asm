@@ -3,7 +3,7 @@
 //
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-//#define USE_DBG
+#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -58,7 +58,7 @@
 
 // Maximum number of Pixie words use per row, 1 pixie is 2 words (GOTOX + CHAR)
 //
-.const NUM_PIXIEWORDS = 148
+.const NUM_PIXIEWORDS = 128
 
 // ------------------------------------------------------------
 // Layer layout for this example

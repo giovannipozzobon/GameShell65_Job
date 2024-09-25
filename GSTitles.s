@@ -154,9 +154,7 @@ _noeffect:
 	sta DrawPosY+0
 
 _dodraw:
-	phy
  	jsr DrawPixie
-	ply
 
  	lda mult2:#$00
  	tax
@@ -253,6 +251,13 @@ gsDrwTitles: {
 
 	_set8im($0f, DrawPal)
 
+	// _set16im(0, DrawPosX)
+	// _set16im(16, DrawPosY)
+	// _set16im(sprFont.baseChar, DrawBaseChr)
+	// _set8im(2, DrawSChr)
+	// jsr DrawPixie
+	// rts
+
 	jsr UpdateObjData
 
 	TextSetPos($30,$28)
@@ -347,9 +352,7 @@ UpdateObjData:
 	lda Objs1Spr,x
 	sta DrawSChr
 
-	phx
 	jsr DrawPixie
-	plx
 
 	inx
 	cpx #NUM_OBJS1

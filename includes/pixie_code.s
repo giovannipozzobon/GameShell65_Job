@@ -77,6 +77,10 @@ DrawPixie:
 	.var yShift = Tmp2+2				// 8bit
 	.var gotoXmask = Tmp2+3				// 8bit
 
+	phx
+	phy
+	phz
+
 	_set16(DrawBaseChr, charIndx)		// Start charIndx with first pixie char
 
 	_set32im(PixieWorkTiles, tilePtr)	// Set base full 32 bit pointers
@@ -233,6 +237,7 @@ bottomRow:
 	// If we have a yShift of 0 we only need to add to 2 rows, skip the last row!
 	//
 	lda yShift
+	and #$e0
 	beq done
 
 	// Advance to next row and charIndx
@@ -296,6 +301,10 @@ bottomRow:
 	sta ((attribPtr)),z
 
 done:
+
+	plz
+	ply
+	plx
 
 	rts
 }
