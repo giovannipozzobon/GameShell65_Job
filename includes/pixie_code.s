@@ -90,7 +90,7 @@ DrawPixie:
 	adc #$00
 	sta charIndx+1
 
-	lda Camera.YScroll1+0
+	lda Camera.YScroll+0
 	and #$07
 	sta lshift
 	

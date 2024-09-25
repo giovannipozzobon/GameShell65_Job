@@ -58,7 +58,7 @@
 
 // Maximum number of Pixie words use per row, 1 pixie is 2 words (GOTOX + CHAR)
 //
-.const NUM_PIXIEWORDS = 128
+.const NUM_PIXIEWORDS = 148
 
 // ------------------------------------------------------------
 // Layer layout for this example
@@ -120,13 +120,13 @@ GameStateData:	.byte $00,$00,$00
 
 .print "--------"
 
-.const bgCharsBegin = SetAssetAddr(CHARS_RAM, $30000)
+.const bgCharsBegin = SetAssetAddr(CHARS_RAM, $40000)
 .const bg0Chars = AddAsset("FS-C0", "sdcard/bg20_chr.bin")
 .const sprFont = AddAsset("FS-F0", "sdcard/font_chr.bin")
 
 .print "--------"
 
-.const blobsBegin = SetAssetAddr($00000, $30000)
+.const blobsBegin = SetAssetAddr($00000, $40000)
 .const iffl0 = AddAsset("FS-IFFL0", "sdcard/data.bin.addr.mc")
 
 .print "--------"
@@ -176,13 +176,8 @@ Entry:
 
     cli
 
-	jsr System.EnableScreen
-
 	// Wait for IRQ before disabling the screen
-	lda Irq.VBlankCount
-!:
-	cmp Irq.VBlankCount
-	beq !-
+	WaitVblank()
 
 	jsr System.DisableScreen
 
@@ -240,37 +235,20 @@ Entry:
 	cli
 
 mainloop:
-	lda Irq.VBlankCount
-!:
-	cmp Irq.VBlankCount
-	beq !-
+	WaitVblank()
 
 	DbgBord(4)
 
-	// Update the display buffers
-	jsr UpdateDisplay
-
-	// Set the fine Y scroll by moving TextYPos up
+	// Update the display buffers for the coming frame, this DMAs the BG layer and
+	// ALL pixie data and sets the X and Y scroll values
 	//
-	lda Camera.YScroll1+0
-	and #$07
-#if V200
-	asl						// When in H200 mode, move 2x the number of pixels
-#endif
-	sta shiftUp
-
-	sec
-	lda System.TopBorder+0
-	sbc shiftUp:#$00
-	sta $d04e
-	lda System.TopBorder+1
-	sbc #$00
-	and #$0f
-	sta $d04f
+	jsr UpdateDisplay
 
 	DbgBord(5)
 
-	// jsr Player.UpdDPad
+	// From this point on we update and draw the coming frame, this gives us a whole
+	// frame to get all of the logic and drawing done.
+	//
 
 	// Run the update
 	lda GameState
@@ -278,26 +256,22 @@ mainloop:
 	tax
 	jsr (GSUpdStateTable,x)
 
-	jsr Camera.CalcParallax
-
+	// Update scroll values for the next frame
 	ldx #Layer1.id
-	lda Camera.XScroll1+0
+	lda Camera.XScroll+0
 	jsr Layers.SetFineScroll
 
 	DbgBord(7)
 
-	// Run the draw
+	// Run the draw, this will add all of the pixies for the next frame
 	lda GameState
 	asl
 	tax
 	jsr (GSDrwStateTable,x)
 
-	// TextSetPos(0,4)
-	// lda Player.DPadClick
-	// jsr PrintHexByte
-
 	DbgBord(0)
 
+	// If the frame is disabled, enable it, this ensure first frame of garbage isn't seen
 	lda #FlEnableScreen
 	bit System.Flags
 	bne skipEnable
@@ -309,6 +283,8 @@ skipEnable:
 	jmp mainloop
 }
 
+// ------------------------------------------------------------
+//
 SwitchGameStates: {
 	sta GameState
 	asl
@@ -317,6 +293,8 @@ SwitchGameStates: {
 	rts
 }
 
+// ------------------------------------------------------------
+//
 UpdateDisplay:
 {
 	jsr Layers.UpdateData.UpdateLayer1
@@ -324,6 +302,25 @@ UpdateDisplay:
 	jsr Layers.UpdateData.UpdatePixie
 
 	jsr Layers.UpdateScrollPositions
+
+	// Set the fine Y scroll by moving TextYPos up
+	//
+	lda Camera.YScroll+0
+	and #$07
+#if V200
+	asl						// When in H200 mode, move 2x the number of pixels
+#endif
+	sta shiftUp
+
+	// Modify the TextYPos by shifting it up
+	sec
+	lda System.TopBorder+0
+	sbc shiftUp:#$00
+	sta $d04e
+	lda System.TopBorder+1
+	sbc #$00
+	and #$0f
+	sta $d04f
 
 	rts
 }
@@ -481,6 +478,8 @@ _line_loop:
     rts
 }
 
+// ------------------------------------------------------------
+//
 InitPalette: {
 	//Bit pairs = CurrPalette, TextPalette, SpritePalette, AltPalette
 	lda #%00000000 //Edit=%00, Text = %00, Sprite = %01, Alt = %00
@@ -510,6 +509,8 @@ InitPalette: {
 	rts
 }
 
+// ------------------------------------------------------------
+//
 #import "camera.s"
 #import "gsTitles.s"
 

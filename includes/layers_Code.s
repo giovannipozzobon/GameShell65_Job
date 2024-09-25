@@ -145,7 +145,7 @@ UpdateData: {
 		// 
 		// This translates to $d778-A = (ObjPosY>>3) * LOGICAL_OBJS_SIZE
 		//
-		lda Camera.YScroll1+0						// Add ObjPosY >> 3 to charPtr and attribPtr
+		lda Camera.YScroll+0						// Add ObjPosY >> 3 to charPtr and attribPtr
 		lsr	
 		lsr	
 		lsr	
@@ -168,7 +168,7 @@ UpdateData: {
 
 		_set16im(BGROWSIZE, src_stride)
 
-		_set16(Camera.XScroll1, src_offset)
+		_set16(Camera.XScroll, src_offset)
 
 		_set16im($003e, src_and)
 		_set16im($0040, copy_length)

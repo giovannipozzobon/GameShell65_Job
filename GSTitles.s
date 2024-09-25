@@ -230,6 +230,17 @@ gsUpdTitles: {
 
 // _not_fire:
 
+	_add16im(Camera.XScroll, 1, Camera.XScroll)
+
+	lda Irq.VBlankCount
+	and #$00
+	bne !+
+
+	_add16im(Camera.YScroll, 1, Camera.YScroll)
+	_and16im(Camera.YScroll, $ff, Camera.YScroll)
+
+!:
+
 	rts
 }
 
@@ -274,16 +285,6 @@ gsDrwTitles: {
 	lda #$a0
 	sta TextPosY
 
-	_add16im(Camera.XScroll, 1, Camera.XScroll)
-
-	lda Irq.VBlankCount
-	and #$00
-	bne !+
-
-	_add16im(Camera.YScroll, 1, Camera.YScroll)
-	_and16im(Camera.YScroll, $ff, Camera.YScroll)
-
-!:
 
 	sec
 	lda #<SCREEN_WIDTH

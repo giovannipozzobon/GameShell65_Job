@@ -1,3 +1,13 @@
+// ------------------------------------------------------------
+//
+.macro WaitVblank() {
+	// Wait for IRQ before disabling the screen
+	lda Irq.VBlankCount
+!:
+	cmp Irq.VBlankCount
+	beq !-
+}
+
 .namespace Irq
 {
 
