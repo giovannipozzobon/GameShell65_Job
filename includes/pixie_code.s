@@ -23,7 +23,10 @@ ClearWorkPixies: {
 
 	// Clear the RRBIndex list
 	ldx #0
-!:		
+!:
+	lda #NUM_PIXIES
+	sta PixieUseCount,x
+
 	lda rowScreenPtr+0
 	sta PixieRowScreenPtrLo,x
 	lda rowScreenPtr+1
@@ -127,6 +130,11 @@ DrawPixie:
 	cpx #NUM_ROWS
 	lbcs done
 
+	// See if number of words has been exhausted
+	lda PixieUseCount,x
+	beq middleRow
+	dec PixieUseCount,x
+
 	// Top character, this uses the first mask from the tables above,
     // grab tile and attrib ptr for this row and advance by the 4 bytes
     // that we will write per row.
@@ -184,6 +192,11 @@ middleRow:
 	cpx #NUM_ROWS
 	lbcs done
     
+	// See if number of words has been exhausted
+	lda PixieUseCount,x
+	beq bottomRow
+	dec PixieUseCount,x
+
 	// Middle character, yShift is the same as first char but full character is drawn so disable rowmask,
     // grab tile and attrib ptr for this row and advance by the 4 bytes
     // that we will write per row.
@@ -246,6 +259,11 @@ bottomRow:
 	bmi done
 	cpx #NUM_ROWS
 	lbcs done
+
+	// See if number of words has been exhausted
+	lda PixieUseCount,x
+	beq done
+	dec PixieUseCount,x
 
 	// Bottom character, yShift is the same as first char but flip the bits of the gotoXmask,
     // grab tile and attrib ptr for this row and advance by the 4 bytes
@@ -322,3 +340,5 @@ PixieRowAttribPtrLo:
 PixieRowAttribPtrHi:
 	.fill NUM_ROWS, $00
 
+PixieUseCount:
+	.fill NUM_ROWS, $00

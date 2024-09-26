@@ -239,6 +239,8 @@ gsUpdTitles: {
 
 !:
 
+	jsr UpdateObjData
+
 	rts
 }
 
@@ -258,7 +260,9 @@ gsDrwTitles: {
 	// jsr DrawPixie
 	// rts
 
-	jsr UpdateObjData
+	jsr DrawObjData
+
+	DbgBord(9)
 
 	TextSetPos($30,$28)
 	TextSetMsgPtr(testTxt1)
@@ -317,11 +321,6 @@ gsDrwTitles: {
 //
 UpdateObjData:
 {
-	lda #$00
-	sta DrawPosY+1
-
-	_set16im((sprFont.baseChar), DrawBaseChr)			// Start charIndx with first pixie char
-
 	// Add Objs into the work ram here
 	//
 	ldx #$00
@@ -339,6 +338,28 @@ UpdateObjData:
 	lda Objs1PosYLo,x
 	adc Objs1VelY,x
 	sta Objs1PosYLo,x
+
+	inx
+	cpx #NUM_OBJS1
+	bne !-
+
+	rts
+}
+
+// ------------------------------------------------------------
+//
+DrawObjData:
+{
+	lda #$00
+	sta DrawPosY+1
+
+	_set16im((sprFont.baseChar), DrawBaseChr)			// Start charIndx with first pixie char
+
+	// Add Objs into the work ram here
+	//
+	ldx #$00
+!:
+	lda Objs1PosYLo,x
 	sta DrawPosY+0
 
 	sec
