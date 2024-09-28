@@ -340,5 +340,6 @@ PixieRowAttribPtrLo:
 PixieRowAttribPtrHi:
 	.fill NUM_ROWS, $00
 
+.segment BSS "Pixie Use Count"
 PixieUseCount:
 	.fill NUM_ROWS, $00
