@@ -197,13 +197,21 @@ UpdateData: {
 		// 
 		// This translates to $d778-A = (ObjPosY>>3) * LOGICAL_OBJS_SIZE
 		//
-		lda Camera.YScroll+0						// Add ObjPosY >> 3 to charPtr and attribPtr
-		lsr	
-		lsr	
-		lsr	
+		lda Camera.YScroll+0				// Add ObjPosY >> 3 to charPtr and attribPtr
 		sta $d770 //hw mult A lsb
-		lda #$00
+		lda Camera.YScroll+1
 		sta $d771
+
+	lda $d771
+	lsr
+	ror $d770
+	lsr
+	ror $d770
+	lsr
+	ror $d770
+	sta $d771
+
+		lda #$00
 		sta $d772
 		sta $d776
 

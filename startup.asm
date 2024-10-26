@@ -78,7 +78,10 @@
 // set into a static buffer, for a real game you'd want to be more fancy
 //
 .const BGROWSIZE = (512 / 16) * 2
-.const BGNUMROWS = (512 / 8)
+.const BGNUMROWS = (2048 / 8)
+
+.const MAXXBOUNDS = 512 - SCREEN_WIDTH
+.const MAXYBOUNDS = 2048 - SCREEN_HEIGHT
 
 // ------------------------------------------------------------
 // Number of NCM palettes that we are using

@@ -5,6 +5,9 @@ TextPtr:		.word $0000
 TextOffs:		.byte $00
 TextEffect:		.byte $00
 
+CamVelX:		.word $0000
+CamVelY:		.word $0000
+
 .segment Code "GameState Titles"
 
 .macro TextSetPos(x,y) {
@@ -50,7 +53,7 @@ TextEffect:		.byte $00
 
 // ------------------------------------------------------------
 //
-.const NUM_OBJS1 = 32
+.const NUM_OBJS1 = 256
 
 // ----------------------------------------------------------------------------
 //
@@ -195,6 +198,12 @@ gsIniTitles: {
 	sta GameStateData+1
 	sta GameStateData+2
 
+	_set16im($0000, Camera.YScroll)
+	_set16im($0001, CamVelY)
+
+	_set16im($0000, Camera.XScroll)
+	_set16im($0001, CamVelX)
+
 	jsr InitObjData
 
 	rts
@@ -232,12 +241,55 @@ gsUpdTitles: {
 
 	lda Irq.VBlankCount
 	and #$00
-	bne !+
+	lbne donemove
 
-	_add16im(Camera.YScroll, 1, Camera.YScroll)
-	_and16im(Camera.YScroll, $7ff, Camera.YScroll)
+	_add16(Camera.XScroll, CamVelX, Camera.XScroll)
+	_add16(Camera.YScroll, CamVelY, Camera.YScroll)
+
+	// Min X bounds
+	lda Camera.XScroll+1
+	bpl !+
+
+	_set16im($0000, Camera.XScroll)
+	_set16im($0001, CamVelX)
 
 !:
+
+	// Max X bounds
+	sec
+	lda Camera.XScroll+0
+	sbc #<MAXXBOUNDS
+	lda Camera.XScroll+1
+	sbc #>MAXXBOUNDS
+	bmi !+
+
+	_set16im(MAXXBOUNDS, Camera.XScroll)
+	_set16im($ffff, CamVelX)
+
+!:
+	// Min Y bounds
+	lda Camera.YScroll+1
+	bpl !+
+
+	_set16im($0000, Camera.YScroll)
+	_set16im($0001, CamVelY)
+
+!:
+
+	// Max Y bounds
+	sec
+	lda Camera.YScroll+0
+	sbc #<MAXYBOUNDS
+	lda Camera.YScroll+1
+	sbc #>MAXYBOUNDS
+	bmi !+
+
+	_set16im(MAXYBOUNDS, Camera.YScroll)
+	_set16im($ffff, CamVelY)
+
+!:
+
+donemove:
 
 	jsr UpdateObjData
 
