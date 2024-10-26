@@ -296,9 +296,18 @@ SwitchGameStates: {
 
 // ------------------------------------------------------------
 //
+BgMap1:
+.dword 	BGMap1TileRAM
+.dword 	BGMap1AttribRAM
+.word 	BGROWSIZE
+.word	$0040
+
 UpdateDisplay:
 {
-	jsr Layers.UpdateData.UpdateLayer1
+	ldx #Layer1.id
+	ldy #<BgMap1
+	ldz #>BgMap1
+	jsr Layers.UpdateData.UpdateLayer
 
 	jsr Layers.UpdateData.UpdatePixie
 

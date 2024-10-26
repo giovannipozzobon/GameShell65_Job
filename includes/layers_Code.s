@@ -123,6 +123,11 @@ UpdateScrollPositions:
 	rts
 }
 
+// -------------------------------------------------------
+// X = Layer Id
+// Y = BG Desc Lo
+// Z = BG Desc Hi
+//
 UpdateData: {
 	.var src_tile_ptr = Tmp			// 32bit
 	.var src_attrib_ptr = Tmp1		// 32bit
@@ -136,9 +141,38 @@ UpdateData: {
 	.var full_size = Tmp4			// 16bit
 	.var src_and = Tmp4+2			// 16bit
 
-	UpdateLayer1: {
-		_set32im(BGMap1TileRAM, src_tile_ptr)
-		_set32im(BGMap1AttribRAM, src_attrib_ptr)
+	.var bgDesc = Tmp5				// 16bit
+
+	UpdateLayer: {
+		sty bgDesc+0
+		stz bgDesc+1
+
+		ldy #$00
+		lda (bgDesc),y
+		sta src_tile_ptr+0
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+1
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+2
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+3
+		iny
+
+		lda (bgDesc),y
+		sta src_attrib_ptr+0
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+1
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+2
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+3
+		iny
 
 		// Calculate which row data to add this character to, we
 		// are using the MUL hardware here to avoid having a row table.
@@ -149,29 +183,43 @@ UpdateData: {
 		lsr	
 		lsr	
 		lsr	
-		tax									// move yRow into X reg
 		sta $d770 //hw mult A lsb
 		lda #$00
 		sta $d771
 		sta $d772
 		sta $d776
-		lda #<BGROWSIZE //hw mult B lsb
+
+		lda (bgDesc),y
 		sta $d774
-		lda #>BGROWSIZE //hw mult B msb
+		sta src_stride+0
+		iny
+		lda (bgDesc),y
 		sta $d775
+		sta src_stride+1
+		iny
 
 		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to char and attrib ptrs
 		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
 
-		_set16im(Layer1.ChrOffs, dst_offset)
-		_set16im(Layer1.ChrSize, full_size)
-
-		_set16im(BGROWSIZE, src_stride)
+		lda ChrOffsLo,x
+		sta dst_offset+0
+		lda ChrOffsHi,x
+		sta dst_offset+1
+		lda ChrSizeLo,x
+		sta full_size+0
+		lda ChrSizeHi,x
+		sta full_size+1
 
 		_set16(Camera.XScroll, src_offset)
 
-		_set16im($003e, src_and)
-		_set16im($0040, copy_length)
+		lda (bgDesc),y
+		sta copy_length+0
+		iny
+		lda (bgDesc),y
+		sta copy_length+1
+		iny
+
+		_sub16im(copy_length, $0002, src_and)
 
 		jsr CopyScrollingLayerChunks
 
@@ -403,6 +451,14 @@ LogOffsLo:
 	.fill LayerList.size(), <LayerList.get(i).GotoXOffs
 LogOffsHi:
 	.fill LayerList.size(), >LayerList.get(i).GotoXOffs
+ChrOffsLo:
+	.fill LayerList.size(), <LayerList.get(i).ChrOffs
+ChrOffsHi:
+	.fill LayerList.size(), >LayerList.get(i).ChrOffs
+ChrSizeLo:
+	.fill LayerList.size(), <LayerList.get(i).ChrSize
+ChrSizeHi:
+	.fill LayerList.size(), >LayerList.get(i).ChrSize
 
 .segment BSS "Layer BSS"
 ScrollUpdate:
