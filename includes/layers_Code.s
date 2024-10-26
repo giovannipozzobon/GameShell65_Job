@@ -30,6 +30,24 @@ SetXPosHi:
 	rts
 }
 
+// -------------------------------------------------------
+// X = Layer Id
+// A = Layer position Y Lo
+SetYPosLo:
+{
+	sta ScrollYLo,x
+	rts
+}
+
+// -------------------------------------------------------
+// X = Layer Id
+// A = Layer position Y Hi
+SetYPosHi:
+{
+	sta ScrollXHi,x
+	rts
+}
+
 // ------------------------------------------------------------
 // X = Layer Id
 // A = Fine scroll value
@@ -468,5 +486,10 @@ ScrollXLo:
 	.fill LayerList.size(), $40
 ScrollXHi:
 	.fill LayerList.size(), $01
+
+ScrollYLo:
+	.fill LayerList.size(), $00
+ScrollYHi:
+	.fill LayerList.size(), $00
 
 }
