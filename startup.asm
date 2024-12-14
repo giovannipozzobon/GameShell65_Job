@@ -20,7 +20,7 @@
 //
 // If you use H320 then SCREEN_WIDTH much be <= 360, otherwise <= 720
 #define H320
-.const SCREEN_WIDTH = 256
+.const SCREEN_WIDTH = 320+32
 
 // If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
 #define V200
