@@ -3,7 +3,7 @@
 //
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-//#define USE_DBG
+#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -114,6 +114,9 @@ GameSubState:	.byte $00
 GameStateTimer:	.byte $00
 GameStateData:	.byte $00,$00,$00
 
+DPad:			.byte $00
+DPadClick:		.byte $00
+
 //--------------------------------------------------------
 // Main
 //--------------------------------------------------------
@@ -126,6 +129,9 @@ GameStateData:	.byte $00,$00,$00
 
 .const bgCharsBegin = SetAssetAddr(CHARS_RAM, $40000)
 .const bg0Chars = AddAsset("FS-C0", "sdcard/bg20_chr.bin")
+.const bg0Map = AddAsset("FS-C0", "sdcard/bg2_LV0L0_map.bin")
+.const bg0Tiles = AddAsset("FS-C0", "sdcard/bg20_tiles.bin")
+
 .const sprFont = AddAsset("FS-F0", "sdcard/font_chr.bin")
 
 .print "--------"
@@ -147,10 +153,10 @@ GameStateData:	.byte $00,$00,$00
 
 // ------------------------------------------------------------
 //
-.enum {GStateTitles}
-.var GSIniStateList = List().add(gsIniTitles)
-.var GSUpdStateList = List().add(gsUpdTitles)
-.var GSDrwStateList = List().add(gsDrwTitles)
+.enum {GStateTitles, GStatePlay}
+.var GSIniStateList = List().add(gsIniTitles, gsIniPlay)
+.var GSUpdStateList = List().add(gsUpdTitles, gsUpdPlay)
+.var GSDrwStateList = List().add(gsDrwTitles, gsDrwPlay)
 
 // ------------------------------------------------------------
 //
@@ -238,6 +244,8 @@ Entry:
 
 	cli
 
+	jsr InitDPad
+	
 mainloop:
 	WaitVblank()
 
@@ -248,11 +256,17 @@ mainloop:
 	//
 	jsr UpdateDisplay
 
-	DbgBord(5)
+	DbgBord(0)
 
 	// From this point on we update and draw the coming frame, this gives us a whole
 	// frame to get all of the logic and drawing done.
 	//
+
+	// Clear the work Pixie ram using DMA
+	jsr ClearWorkPixies
+
+	// Scan the keyboard and joystick 2
+	jsr UpdateDPad
 
 	// Run the update
 	lda GameState
@@ -294,6 +308,148 @@ SwitchGameStates: {
 	asl
 	tax
 	jsr (GSIniStateTable,x)
+	rts
+}
+
+// ------------------------------------------------------------
+//
+InitDPad: {
+
+	lda #$00
+	sta DPad
+	sta DPadClick
+
+	rts
+}
+
+UpdateDPad: {
+	// Scan the keyboard
+	jsr ScanKeyMatrix
+
+	lda DPad
+	sta oldDPad
+
+	lda #$00
+	sta DPad
+
+	lda #$01
+	bit $dc00
+	bne _not_j2_up
+
+	lda #$01
+	tsb DPad
+	bra _not_up
+
+_not_j2_up:
+
+	lda ScanResult+1
+	and #$04
+	bne _not_up
+
+	lda #$01
+	tsb DPad
+
+_not_up:
+
+	lda #$02
+	bit $dc00
+	bne _not_j2_down
+
+	lda #$02
+	tsb DPad
+	bra _not_down
+
+_not_j2_down:
+
+	lda ScanResult+1
+	and #$10
+	bne _not_down
+
+	lda #$02
+	tsb DPad
+
+_not_down:
+
+	lda #$04
+	bit $dc00
+	bne _not_j2_left
+
+	lda #$04
+	tsb DPad
+	bra _not_left
+
+_not_j2_left:
+
+	lda ScanResult+5
+	and #$80
+	bne _not_left
+
+	lda #$04
+	tsb DPad
+
+_not_left:
+
+	lda #$08
+	bit $dc00
+	bne _not_j2_right
+
+	lda #$08
+	tsb DPad
+	bra _not_right
+
+_not_j2_right:
+
+	lda ScanResult+5
+	and #$10
+	bne _not_right
+
+	lda #$08
+	tsb DPad
+
+_not_right:
+
+	lda #$10
+	bit $dc00
+	bne _not_j2_fire
+
+	lda #$10
+	tsb DPad
+	bra _not_fire
+
+_not_j2_fire:
+
+	lda ScanResult+6
+	and #$80
+	bne _not_fire
+
+	lda #$10
+	tsb DPad
+
+_not_fire:
+
+	lda ScanResult+0
+	and #$40
+	bne _not_F5
+
+	lda #$20
+	tsb DPad
+
+_not_F5:
+
+	lda ScanResult+0
+	and #$08
+	bne _not_F7
+
+	lda #$40
+	tsb DPad
+
+_not_F7:
+
+	lda oldDPad:#$00
+	eor DPad
+	and DPad
+	sta DPadClick
+	
 	rts
 }
 
@@ -370,9 +526,12 @@ InitBGMap:
 	_set16im(Bg0Tiles, tile_map)
 	_set16im((bg0Chars.addr/64), chr_offs)
     _set16im(BgMap, map_base)
-    _set32im(BGMap1TileRAM, chr_ptr)
+
+    _set32im(BGMap1TileRAM, chr_ptr)		// map is decompressed to this location
     _set32im(BGMap1AttribRAM, attrib_ptr)
+
 	_set8im((Layer1.palIdx<<4) | $0f, palIndx)
+
     jsr InitMap
 
     rts
@@ -525,7 +684,9 @@ InitPalette: {
 // ------------------------------------------------------------
 //
 #import "camera.s"
+#import "pixieText.s"
 #import "gsTitles.s"
+#import "gsPlay.s"
 
 .segment Data "GameState Tables"
 GSIniStateTable:
