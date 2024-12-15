@@ -246,6 +246,11 @@ Entry:
 
 	cli
 
+	// Ensure layer system is initialized
+	Layer_SetRenderFunc(Layer1.id, RenderLayerBG)
+	Layer_SetRenderFunc(LayerPixie.id, Layers.UpdateData.UpdatePixie)
+	Layer_SetRenderFunc(LayerEOL.id, RenderNop)
+	
 	jsr InitDPad
 	
 mainloop:
@@ -253,13 +258,17 @@ mainloop:
 
 	DbgBord(4)
 
-	// Update the display buffers for the coming frame, this DMAs the BG layer and
+	// !!!! - Update Buffers that will be seen next frame - !!!!
+	//
+	// Update the layer buffers for the coming frame, this DMAs the BG layer and
 	// ALL pixie data and sets the X and Y scroll values
 	//
-	jsr UpdateDisplay
+	jsr Layers.UpdateBuffers
 
 	DbgBord(0)
 
+	// !!!! - Prepare all data for next frame - !!!!
+	//
 	// From this point on we update and draw the coming frame, this gives us a whole
 	// frame to get all of the logic and drawing done.
 	//
@@ -457,22 +466,24 @@ _not_F7:
 
 // ------------------------------------------------------------
 //
+RenderNop: {
+	rts
+}
+
+// ------------------------------------------------------------
+//
 BgMap1:
 .dword 	BGMap1TileRAM
 .dword 	BGMap1AttribRAM
 .word 	BGROWSIZE
 .word	$0040
 
-UpdateDisplay:
-{
+RenderLayerBG: {
+	// 
 	ldx #Layer1.id
 	ldy #<BgMap1
 	ldz #>BgMap1
 	jsr Layers.UpdateData.UpdateLayer
-
-	jsr Layers.UpdateData.UpdatePixie
-
-	jsr Layers.UpdateScrollPositions
 
 	// Set the fine Y scroll by moving TextYPos up
 	//
@@ -493,7 +504,7 @@ UpdateDisplay:
 	and #$0f
 	sta $d04f
 
-	rts
+	rts	
 }
 
 // ----------------------------------------------------------------------------

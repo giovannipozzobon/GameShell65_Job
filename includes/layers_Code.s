@@ -1,4 +1,14 @@
 //--------------------------------------------------------
+// Macros (can't put macros in namespace)
+.macro Layer_SetRenderFunc(layerId, renderFunc) {
+ 	ldx #layerId
+	lda #<renderFunc
+	sta Layers.RenderFuncLo,x
+	lda #>renderFunc
+	sta Layers.RenderFuncHi,x
+}
+
+//--------------------------------------------------------
 // Layers
 //--------------------------------------------------------
 .namespace Layers
@@ -66,6 +76,33 @@ SetFineScroll:
 
 	lda #$01
 	sta ScrollUpdate,x
+
+	rts
+}
+
+// ------------------------------------------------------------
+//
+UpdateBuffers:
+{
+	// For each of the layers, call the render function
+	//
+	ldx #$00
+
+!layerloop:
+	phx
+	lda RenderFuncLo,x
+	sta Tmp+0
+	lda RenderFuncHi,x
+	sta Tmp+1
+	jsr (Tmp)
+	plx
+
+	inx
+	cpx #LayerList.size()
+	bne !layerloop-
+
+	// Update all of the (horizontal) scroll positions
+ 	jsr UpdateScrollPositions
 
 	rts
 }
@@ -488,6 +525,11 @@ ChrSizeHi:
 
 .segment BSS "Layer BSS"
 ScrollUpdate:
+	.fill LayerList.size(), $00
+
+RenderFuncLo:
+	.fill LayerList.size(), $00
+RenderFuncHi:
 	.fill LayerList.size(), $00
 
 ScrollXLo:
