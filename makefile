@@ -15,12 +15,12 @@ ifeq ($(windows), 1)
 	ETHERLOAD_ARGS=-r -m $(DISKNAME) bin/$(APPNAME).prg.addr.mc
 	MEGATOOL=./build/megatool/megatool.exe
 else
-	KICK=~/Applications/KickAss/KickAss65CE02-5.24f.jar
+	KICK=/Applications/KickAssembler/KickAss65CE02-5.25.jar
 	C1541=/opt/homebrew/Cellar/vice/3.8/bin/c1541
-	XEMU=/Applications/Xemu/xmega65.app/Contents/MacOS/xmega65
-	MEGA65_FTP=~/Applications/Mega65/mega65_ftp.osx
+	XEMU=/Applications/Mega65/bin/xmega65
+	MEGA65_FTP=/Applications/m65tools/mega65_ftp.osx
 	EMEGA65_FTP=~/Documents/MEGA65/mega65_ftp.osx
-	ETHERLOAD=~/Documents/MEGA65/etherload.osx
+	ETHERLOAD=/Applications/m65tools/etherload.osx
 	EMEGA65_FTP_ARGS=-e -F -c "put $(DISKNAME)" -c "quit"
 	ETHERLOAD_ARGS=-r -m $(DISKNAME) bin/$(APPNAME).prg.addr.mc
 	MEGATOOL=./build/megatool/macmegatool.exe
@@ -36,7 +36,6 @@ disk:
 datablobs:
 	$(MEGATOOL) -p 00000100 \
 		sdcard/bg20_chr.bin \
-		sdcard/bg21_chr.bin \
 		sdcard/font_chr.bin \
 		sdcard/data.bin
 
