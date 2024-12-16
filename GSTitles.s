@@ -26,6 +26,22 @@ gsIniTitles: {
 	_set16im($0000, Camera.XScroll)
 	_set16im($0001, Camera.CamVelX)
 
+	// Ensure layer system is initialized
+	ldx #Layout1.id
+	jsr Layers.SelectLayout
+
+ 	ldx #Layout1_EOL.id
+	lda #<SCREEN_WIDTH
+	jsr Layers.SetXPosLo
+	lda #>SCREEN_WIDTH
+	jsr Layers.SetXPosHi
+
+	jsr Layers.UpdateData.InitEOL
+
+	Layer_SetRenderFunc(Layout1_BG.id, RenderLayout1BG)
+	Layer_SetRenderFunc(Layout1_Pixie.id, Layers.UpdateData.UpdatePixie)
+	Layer_SetRenderFunc(Layout1_EOL.id, RenderNop)
+
 	rts
 }
 
@@ -101,6 +117,17 @@ gsUpdTitles: {
 !:
 
 donemove:
+
+	// Update scroll values for the next frame
+	ldx #Layout1_BG.id
+
+	lda Camera.XScroll+0
+	jsr Layers.SetXPosLo
+	lda Camera.XScroll+1
+	jsr Layers.SetXPosHi
+
+	lda Camera.XScroll+0
+	jsr Layers.SetFineScroll
 
 	lda DPadClick
 	and #$10
@@ -184,6 +211,37 @@ gsDrwTitles: {
 	TextDrawSpriteMsg(false, 0, true)
 
 	rts
+}
+
+// ------------------------------------------------------------
+//
+RenderLayout1BG: {
+	// 
+	ldx #Layout1_BG.id
+	ldy #<BgMap1
+	ldz #>BgMap1
+	jsr Layers.UpdateData.UpdateLayer
+
+	// Set the fine Y scroll by moving TextYPos up
+	//
+	lda Camera.YScroll+0
+	and #$07
+#if V200
+	asl						// When in H200 mode, move 2x the number of pixels
+#endif
+	sta shiftUp
+
+	// Modify the TextYPos by shifting it up
+	sec
+	lda System.TopBorder+0
+	sbc shiftUp:#$00
+	sta $d04e
+	lda System.TopBorder+1
+	sbc #$00
+	and #$0f
+	sta $d04f
+
+	rts	
 }
 
 // ---

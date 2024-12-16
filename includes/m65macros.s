@@ -267,6 +267,15 @@ start:
 	sta ptr2
 }
 
+.macro _half16(srcdst)
+{
+	lda srcdst+1
+	cmp #$80
+	ror
+	ror srcdst+0
+	sta srcdst+1
+}
+
 // _set24im - store a 24bit constant to a memory location
 .macro _set24im(value, dst)
 {

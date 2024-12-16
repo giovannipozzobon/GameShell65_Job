@@ -3,7 +3,7 @@
 //
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-#define USE_DBG
+//#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -12,6 +12,8 @@
 .const COLOR_RAM = $ff80000 + COLOR_OFFSET
 
 .const SCREEN_RAM = $50000		// 
+
+.const MAP_RAM = $20000
 
 .const CHARS_RAM = $10000
 
@@ -35,7 +37,8 @@
 
 .segmentdef ScreenRam [start=SCREEN_RAM, virtual]
 .segmentdef PixieWorkRam [startAfter="ScreenRam", max=SCREEN_RAM+$ffff, virtual]
-.segmentdef MapRam [startAfter="PixieWorkRam", max=SCREEN_RAM+$ffff, virtual]
+
+.segmentdef MapRam [start=MAP_RAM, virtual]
 
 .cpu _45gs02				
 
@@ -71,19 +74,28 @@
 //
 // 3) Always end with EOL layer
 //
-.const Layer1 = Layer_BG("bg_level", NCM_TILES_WIDE, true, 1)
-.const LayerPixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
-.const LayerEOL = Layer_EOL("eol")
+.const Layout1 = NewLayout("titles")
+.const Layout1_BG = Layer_BG("bg_level", NCM_TILES_WIDE, true, 1)
+.const Layout1_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
+.const Layout1_EOL = Layer_EOL("eol")
+.const Layout1end = EndLayout(Layout1)
+
+.const Layout2 = NewLayout("play")
+.const Layout2_BG0 = Layer_BG("bg_level0", NCM_TILES_WIDE, true, 1)
+.const Layout2_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
+.const Layout2_BG1 = Layer_BG("bg_level1", NCM_TILES_WIDE, true, 1)
+.const Layout2_EOL = Layer_EOL("eol")
+.const Layout2end = EndLayout(Layout2)
 
 // ------------------------------------------------------------
 // Static BG Map sizes, in this example we are expanding the tile / map
 // set into a static buffer, for a real game you'd want to be more fancy
 //
 .const BGROWSIZE = (512 / 16) * 2
-.const BGNUMROWS = (2048 / 8)
+.const BGNUMROWS = (256 / 8)
 
 .const MAXXBOUNDS = 512 - SCREEN_WIDTH
-.const MAXYBOUNDS = 2048 - SCREEN_HEIGHT
+.const MAXYBOUNDS = 256 - SCREEN_HEIGHT
 
 // ------------------------------------------------------------
 // Number of NCM palettes that we are using
@@ -91,6 +103,7 @@
 .enum {
 	PAL_FONTHUD,
 	PAL_BG0,
+	PAL_BG1,
 
 	NUM_PALETTES
 }
@@ -131,8 +144,7 @@ DPadClick:		.byte $00
 
 .const bgCharsBegin = SetAssetAddr(CHARS_RAM, $40000)
 .const bg0Chars = AddAsset("FS-C0", "sdcard/bg20_chr.bin")
-.const bg0Map = AddAsset("FS-C0", "sdcard/bg2_LV0L0_map.bin")
-.const bg0Tiles = AddAsset("FS-C0", "sdcard/bg20_tiles.bin")
+.const bg1Chars = AddAsset("FS-C1", "sdcard/bg21_chr.bin")
 
 .const sprFont = AddAsset("FS-F0", "sdcard/font_chr.bin")
 
@@ -213,19 +225,7 @@ Entry:
 
 	jsr System.Initialization2
 
-	VIC4_SetRowWidth(LOGICAL_ROW_SIZE)
-	VIC4_SetNumCharacters(LOGICAL_ROW_SIZE/2)
-	VIC4_SetNumRows(NUM_ROWS)
-
 	VIC4_SetScreenLocation(SCREEN_RAM)
-
- 	ldx #LayerEOL.id
-	lda #<SCREEN_WIDTH
-	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
-	jsr Layers.SetXPosHi
-
-	jsr Layers.UpdateData.InitEOL
 
 	jsr InitPalette
 
@@ -245,11 +245,6 @@ Entry:
     jsr Irq.SetIRQBotPos
 
 	cli
-
-	// Ensure layer system is initialized
-	Layer_SetRenderFunc(Layer1.id, RenderLayerBG)
-	Layer_SetRenderFunc(LayerPixie.id, Layers.UpdateData.UpdatePixie)
-	Layer_SetRenderFunc(LayerEOL.id, RenderNop)
 	
 	jsr InitDPad
 	
@@ -284,11 +279,6 @@ mainloop:
 	asl
 	tax
 	jsr (GSUpdStateTable,x)
-
-	// Update scroll values for the next frame
-	ldx #Layer1.id
-	lda Camera.XScroll+0
-	jsr Layers.SetFineScroll
 
 	DbgBord(7)
 
@@ -473,39 +463,16 @@ RenderNop: {
 // ------------------------------------------------------------
 //
 BgMap1:
+.dword 	BGMap0TileRAM
+.dword 	BGMap0AttribRAM
+.word 	BGROWSIZE
+.word	$0040
+
+BgMap2:
 .dword 	BGMap1TileRAM
 .dword 	BGMap1AttribRAM
 .word 	BGROWSIZE
 .word	$0040
-
-RenderLayerBG: {
-	// 
-	ldx #Layer1.id
-	ldy #<BgMap1
-	ldz #>BgMap1
-	jsr Layers.UpdateData.UpdateLayer
-
-	// Set the fine Y scroll by moving TextYPos up
-	//
-	lda Camera.YScroll+0
-	and #$07
-#if V200
-	asl						// When in H200 mode, move 2x the number of pixels
-#endif
-	sta shiftUp
-
-	// Modify the TextYPos by shifting it up
-	sec
-	lda System.TopBorder+0
-	sbc shiftUp:#$00
-	sta $d04e
-	lda System.TopBorder+1
-	sbc #$00
-	and #$0f
-	sta $d04f
-
-	rts	
-}
 
 // ----------------------------------------------------------------------------
 //
@@ -538,12 +505,35 @@ InitBGMap:
 	_set16im(BGROWSIZE*2, line_stride)		// we fill the buffer 2 lines at a time
 	_set16im(Bg0Tiles, tile_map)
 	_set16im((bg0Chars.addr/64), chr_offs)
-    _set16im(BgMap, map_base)
+    _set16im(Bg0Map, map_base)
+
+    _set32im(BGMap0TileRAM, chr_ptr)		// map is decompressed to this location
+    _set32im(BGMap0AttribRAM, attrib_ptr)
+
+	_set8im((PAL_BG0<<4) | $0f, palIndx)
+
+    jsr InitMap
+
+	lda #<[$3e]
+	sta offsWrapLo
+	lda #>[$3e]
+	sta offsWrapHi
+	lda #<[$40]
+	sta baseAddLo
+	lda #>[$40]
+	sta baseAddHi
+	lda #$20
+	sta colCount
+	_set16im(BGROWSIZE, line_delta)
+	_set16im(BGROWSIZE*2, line_stride)		// we fill the buffer 2 lines at a time
+	_set16im(Bg1Tiles, tile_map)
+	_set16im((bg1Chars.addr/64), chr_offs)
+    _set16im(Bg1Map, map_base)
 
     _set32im(BGMap1TileRAM, chr_ptr)		// map is decompressed to this location
     _set32im(BGMap1AttribRAM, attrib_ptr)
 
-	_set8im((Layer1.palIdx<<4) | $0f, palIndx)
+	_set8im((PAL_BG1<<4) | $0f, palIndx)
 
     jsr InitMap
 
@@ -688,8 +678,11 @@ InitPalette: {
 
 	lda #$00
 	sta $d100
+	sta $d110
 	sta $d200
+	sta $d210
 	sta $d300
+	sta $d310
 
 	rts
 }
@@ -728,30 +721,40 @@ ClearPixieAttrib:
 Palette:
 	.import binary "./sdcard/font_pal.bin"
 	.import binary "./sdcard/bg20_pal.bin"
+	.import binary "./sdcard/bg21_pal.bin"
 
 .segment Data "BgMap Buffer"
-BgMap:
+Bg0Map:
 	.import binary "./sdcard/bg2_LV0L0_map.bin"
+Bg1Map:
+	.import binary "./sdcard/bg2_LV1L0_map.bin"
 
 .segment Data "Bg0 Tiles"
 Bg0Tiles:
 	.import binary "./sdcard/bg20_tiles.bin"
+Bg1Tiles:
+	.import binary "./sdcard/bg21_tiles.bin"
 
 // ------------------------------------------------------------
 // Ensure these tables DONOT straddle a bank address
 //
 .segment PixieWorkRam "Pixie Work RAM"
 PixieWorkTiles:
-	.fill (LayerPixie.DataSize * NUM_ROWS), $00
+	.fill (Layout1_Pixie.DataSize * NUM_ROWS), $00
 PixieWorkAttrib:
-	.fill (LayerPixie.DataSize * NUM_ROWS), $00
+	.fill (Layout1_Pixie.DataSize * NUM_ROWS), $00
 
 .segment MapRam "Map RAM"
+BGMap0TileRAM:
+	.fill (BGROWSIZE*BGNUMROWS), $00
+BGMap0AttribRAM:
+	.fill (BGROWSIZE*BGNUMROWS), $00
+
 BGMap1TileRAM:
 	.fill (BGROWSIZE*BGNUMROWS), $00
 BGMap1AttribRAM:
 	.fill (BGROWSIZE*BGNUMROWS), $00
 
 .segment ScreenRam "Screen RAM"
-	.fill (LOGICAL_ROW_SIZE*NUM_ROWS), $00
+	.fill (MAX_SCREEN_SIZE), $00
 

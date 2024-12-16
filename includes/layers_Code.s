@@ -1,6 +1,7 @@
 //--------------------------------------------------------
 // Macros (can't put macros in namespace)
-.macro Layer_SetRenderFunc(layerId, renderFunc) {
+.macro Layer_SetRenderFunc(layerId, renderFunc)
+{
  	ldx #layerId
 	lda #<renderFunc
 	sta Layers.RenderFuncLo,x
@@ -24,6 +25,7 @@
 SetXPosLo:
 {
 	sta ScrollXLo,x
+	sta FineScrollXLo,x
 	lda #$01
 	sta ScrollUpdate,x
 	rts
@@ -35,6 +37,7 @@ SetXPosLo:
 SetXPosHi:
 {
 	sta ScrollXHi,x
+	sta FineScrollXHi,x
 	lda #$01
 	sta ScrollUpdate,x
 	rts
@@ -68,14 +71,67 @@ SetFineScroll:
 	sec
 	lda #0
 	sbc ul2xscroll:#$00
-	sta ScrollXLo,x
+	sta FineScrollXLo,x
 	lda #0
 	sbc #0
 	and #$03
-	sta ScrollXHi,x
+	sta FineScrollXHi,x
 
 	lda #$01
 	sta ScrollUpdate,x
+
+	rts
+}
+
+// ------------------------------------------------------------
+// X = Layout Id
+SelectLayout:
+{
+	stx LayoutId
+
+	lda LayerBegin,x
+	sta BeginLayer
+	lda LayerEnd,x
+	sta	EndLayer
+
+	lda LayerLogSizeLo,x
+	sta LogicalRowSize+0
+	sta Tmp+0
+	lda LayerLogSizeHi,x
+	sta LogicalRowSize+1
+	sta Tmp+1
+
+	// set HW row width (in bytes)
+	_set16(LogicalRowSize, $d058)
+
+	// Divide Tmp by 2 to get number of characters
+	_half16(Tmp)
+
+	// Shift Tmp+1 up by 4 
+	asl Tmp+1
+	asl Tmp+1
+	asl Tmp+1
+	asl Tmp+1
+
+	// set HW number of characters
+	lda Tmp+0
+	sta $d05e
+	lda $d063
+	and #$cf
+	ora Tmp+1
+	sta $d063
+
+	// set HW number of rows
+	lda #NUM_ROWS
+	sta $d07b 
+
+	lda LayerPixieId,x
+	tay
+
+	lda LogOffsLo,y
+	sta PixieGotoOffs+0
+	lda LogOffsHi,y
+	sta PixieGotoOffs+1
 
 	rts
 }
@@ -86,7 +142,7 @@ UpdateBuffers:
 {
 	// For each of the layers, call the render function
 	//
-	ldx #$00
+	ldx BeginLayer
 
 !layerloop:
 	phx
@@ -98,7 +154,7 @@ UpdateBuffers:
 	plx
 
 	inx
-	cpx #LayerList.size()
+	cpx EndLayer
 	bne !layerloop-
 
 	// Update all of the (horizontal) scroll positions
@@ -115,7 +171,7 @@ UpdateScrollPositions:
 	.var attrib_ptr = Tmp1		// 32bit
 	.var gotoOffs = Tmp2		// 16bit
 
-	ldx #0
+	ldx BeginLayer
 
 !layerloop:
 	lda Layers.ScrollUpdate,x
@@ -125,9 +181,9 @@ UpdateScrollPositions:
 	sta Layers.ScrollUpdate,x
 
 	// setup the scroll position
-	lda Layers.ScrollXLo,x
+	lda Layers.FineScrollXLo,x
 	sta xposLo
-	lda Layers.ScrollXHi,x
+	lda Layers.FineScrollXHi,x
 	and #$03
 	sta xposHi
 
@@ -161,8 +217,8 @@ UpdateScrollPositions:
 		lda #$00
 		sta ((attrib_ptr)),z
 
-	    _add16im(tile_ptr, LOGICAL_ROW_SIZE, tile_ptr)
-	    _add16im(attrib_ptr, LOGICAL_ROW_SIZE, attrib_ptr)
+	    _add16(tile_ptr, LogicalRowSize, tile_ptr)
+	    _add16(attrib_ptr, LogicalRowSize, attrib_ptr)
 
 		dey
 		lbne !loop-
@@ -172,7 +228,7 @@ UpdateScrollPositions:
 !layerskip:
 
 	inx
-	cpx #LayerList.size()
+	cpx EndLayer
 	lbne !layerloop-
 
 	rts
@@ -183,7 +239,8 @@ UpdateScrollPositions:
 // Y = BG Desc Lo
 // Z = BG Desc Hi
 //
-UpdateData: {
+UpdateData: 
+{
 	.var src_tile_ptr = Tmp			// 32bit
 	.var src_attrib_ptr = Tmp1		// 32bit
 
@@ -239,14 +296,14 @@ UpdateData: {
 		lda Camera.YScroll+1
 		sta $d771
 
-	lda $d771
-	lsr
-	ror $d770
-	lsr
-	ror $d770
-	lsr
-	ror $d770
-	sta $d771
+		lda $d771
+		lsr
+		ror $d770
+		lsr
+		ror $d770
+		lsr
+		ror $d770
+		sta $d771
 
 		lda #$00
 		sta $d772
@@ -273,7 +330,10 @@ UpdateData: {
 		lda ChrSizeHi,x
 		sta full_size+1
 
-		_set16(Camera.XScroll, src_offset)
+		lda ScrollXLo,x
+		sta src_offset+0
+		lda ScrollXHi,x
+		sta src_offset+1
 
 		lda (bgDesc),y
 		sta copy_length+0
@@ -289,27 +349,42 @@ UpdateData: {
 		rts
 	}
 
-	UpdatePixie: {
+	UpdatePixie: 
+	{
 		_set32im(PixieWorkTiles, src_tile_ptr)
 		_set32im(PixieWorkAttrib, src_attrib_ptr)
 
-		_set16im(LayerPixie.GotoXOffs, dst_offset)
-		_set16im(LayerPixie.DataSize, copy_length)
+		_set16(PixieGotoOffs, dst_offset)
+		_set16im(Layout1_Pixie.DataSize, copy_length)
 
 		_set16im(0, src_offset)
-		_set16im(LayerPixie.DataSize, src_stride)
+		_set16im(Layout1_Pixie.DataSize, src_stride)
 
 		jsr CopyLayerChunks
 
 		rts
 	}
 
-	InitEOL: {
+	InitEOL: 
+	{
 		.var dst_tile_ptr = Tmp			// 32bit
 		.var dst_attrib_ptr = Tmp1		// 32bit
+		.var chrOffs = Tmp2				// 16bit
 
-		_set32im(SCREEN_RAM + LayerEOL.ChrOffs, dst_tile_ptr)
-		_set32im(COLOR_RAM + LayerEOL.ChrOffs, dst_attrib_ptr)
+		_set32im(SCREEN_RAM, dst_tile_ptr)
+		_set32im(COLOR_RAM, dst_attrib_ptr)
+
+		// get the selected layout's last layer
+		ldx EndLayer
+		dex
+
+		lda ChrOffsLo,x
+		sta chrOffs+0
+		lda ChrOffsHi,x
+		sta chrOffs+1
+
+		_add16(dst_tile_ptr, chrOffs, dst_tile_ptr)
+		_add16(dst_attrib_ptr, chrOffs, dst_attrib_ptr)
 
 		ldy #$00
 	!:
@@ -324,8 +399,8 @@ UpdateData: {
 		lda #$00
 		sta ((dst_attrib_ptr)),z
 
-		_add16im(dst_tile_ptr, LOGICAL_ROW_SIZE, dst_tile_ptr)
-		_add16im(dst_attrib_ptr, LOGICAL_ROW_SIZE, dst_attrib_ptr)
+		_add16(dst_tile_ptr, LogicalRowSize, dst_tile_ptr)
+		_add16(dst_attrib_ptr, LogicalRowSize, dst_attrib_ptr)
 
 		iny
 		cpy #NUM_ROWS
@@ -334,7 +409,8 @@ UpdateData: {
 		rts
 	}
 
-	CopyScrollingLayerChunks: {
+	CopyScrollingLayerChunks: 
+	{
 		lsr src_offset+1
 		ror src_offset+0
 		lsr src_offset+1
@@ -375,7 +451,8 @@ UpdateData: {
 		rts
 	}
 
-	CopyLayerChunks: {
+	CopyLayerChunks: 
+	{
 		_set16(copy_length, tileLength)
 		_set16(copy_length, attribLength)
 
@@ -419,7 +496,7 @@ UpdateData: {
 		RunDMAJob(TileJob)
 
 		_add16(tileSource, src_stride, tileSource)
-		_add16im(tileDest, LOGICAL_ROW_SIZE, tileDest)
+		_add16(tileDest, LogicalRowSize, tileDest)
 
 		inx
 		cpx #NUM_ROWS
@@ -453,7 +530,7 @@ UpdateData: {
 		RunDMAJob(AttribJob)
 
 		_add16(attribSource, src_stride, attribSource)
-		_add16im(attribDest, LOGICAL_ROW_SIZE, attribDest)
+		_add16(attribDest, LogicalRowSize, attribDest)
 
 		inx
 		cpx #NUM_ROWS
@@ -508,38 +585,42 @@ UpdateData: {
 }
 
 .segment Data "Layer Data"
-Trans:
-	.fill LayerList.size(), LayerList.get(i).firstLayer ? $10|$04 : $90|$04
-LogOffsLo:
-	.fill LayerList.size(), <LayerList.get(i).GotoXOffs
-LogOffsHi:
-	.fill LayerList.size(), >LayerList.get(i).GotoXOffs
-ChrOffsLo:
-	.fill LayerList.size(), <LayerList.get(i).ChrOffs
-ChrOffsHi:
-	.fill LayerList.size(), >LayerList.get(i).ChrOffs
-ChrSizeLo:
-	.fill LayerList.size(), <LayerList.get(i).ChrSize
-ChrSizeHi:
-	.fill LayerList.size(), >LayerList.get(i).ChrSize
+Trans:			.fill LayerList.size(), LayerList.get(i).firstLayer ? $10|$04 : $90|$04
+LogOffsLo:		.fill LayerList.size(), <LayerList.get(i).GotoXOffs
+LogOffsHi:		.fill LayerList.size(), >LayerList.get(i).GotoXOffs
+ChrOffsLo:		.fill LayerList.size(), <LayerList.get(i).ChrOffs
+ChrOffsHi:		.fill LayerList.size(), >LayerList.get(i).ChrOffs
+ChrSizeLo:		.fill LayerList.size(), <LayerList.get(i).ChrSize
+ChrSizeHi:		.fill LayerList.size(), >LayerList.get(i).ChrSize
+
+LayerBegin:		.fill LayoutList.size(), LayoutList.get(i).begin
+LayerEnd:		.fill LayoutList.size(), LayoutList.get(i).end
+LayerLogSizeLo:	.fill LayoutList.size(), <LayoutList.get(i).logicalSize
+LayerLogSizeHi:	.fill LayoutList.size(), >LayoutList.get(i).logicalSize
+LayerPixieId:	.fill LayoutList.size(), LayoutList.get(i).pixieId
 
 .segment BSS "Layer BSS"
-ScrollUpdate:
-	.fill LayerList.size(), $00
+LayoutId:		.byte	$00
 
-RenderFuncLo:
-	.fill LayerList.size(), $00
-RenderFuncHi:
-	.fill LayerList.size(), $00
+BeginLayer:		.byte	$00
+EndLayer:		.byte	$00
 
-ScrollXLo:
-	.fill LayerList.size(), $40
-ScrollXHi:
-	.fill LayerList.size(), $01
+LogicalRowSize:	.word 	$00
+PixieGotoOffs:	.word 	$00
 
-ScrollYLo:
-	.fill LayerList.size(), $00
-ScrollYHi:
-	.fill LayerList.size(), $00
+
+ScrollUpdate:	.fill LayerList.size(), $00
+
+RenderFuncLo:	.fill LayerList.size(), $00
+RenderFuncHi:	.fill LayerList.size(), $00
+
+ScrollXLo:	.fill LayerList.size(), $40
+ScrollXHi:	.fill LayerList.size(), $01
+
+FineScrollXLo:	.fill LayerList.size(), $40
+FineScrollXHi:	.fill LayerList.size(), $01
+
+ScrollYLo:		.fill LayerList.size(), $00
+ScrollYHi:		.fill LayerList.size(), $00
 
 }

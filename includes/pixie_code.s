@@ -37,8 +37,8 @@ ClearWorkPixies: {
 	lda rowAttribPtr+1
 	sta PixieRowAttribPtrHi,x
 
-	_add16im(rowScreenPtr, LayerPixie.DataSize, rowScreenPtr)
-	_add16im(rowAttribPtr, LayerPixie.DataSize, rowAttribPtr)
+	_add16im(rowScreenPtr, Layout1_Pixie.DataSize, rowScreenPtr)
+	_add16im(rowAttribPtr, Layout1_Pixie.DataSize, rowAttribPtr)
 	
 	inx
 	cpx #NUM_ROWS
@@ -54,14 +54,14 @@ Job:
 		// Tile
 		DMACopyJob(
 			ClearPixieTile, 
-			PixieWorkTiles + (r * LayerPixie.DataSize),
-			LayerPixie.DataSize,
+			PixieWorkTiles + (r * Layout1_Pixie.DataSize),
+			Layout1_Pixie.DataSize,
 			true, false)
 		// Atrib
 		DMACopyJob(
 			ClearPixieAttrib,
-			PixieWorkAttrib + (r * LayerPixie.DataSize),
-			LayerPixie.DataSize,
+			PixieWorkAttrib + (r * Layout1_Pixie.DataSize),
+			Layout1_Pixie.DataSize,
 			(r!=(NUM_ROWS-1)), false)
 	}
 }	

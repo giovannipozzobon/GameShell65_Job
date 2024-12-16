@@ -25,12 +25,29 @@ gsIniPlay: {
 	sta GameStateData+2
 
 	_set16im($0000, Camera.YScroll)
-	_set16im($0001, Camera.CamVelY)
+	_set16im($0000, Camera.CamVelY)
 
 	_set16im($0000, Camera.XScroll)
 	_set16im($0001, Camera.CamVelX)
 
 	jsr InitObjData
+
+	// Ensure layer system is initialized
+	ldx #Layout2.id
+	jsr Layers.SelectLayout
+
+ 	ldx #Layout2_EOL.id
+	lda #<SCREEN_WIDTH
+	jsr Layers.SetXPosLo
+	lda #>SCREEN_WIDTH
+	jsr Layers.SetXPosHi
+
+	jsr Layers.UpdateData.InitEOL
+
+	Layer_SetRenderFunc(Layout2_BG0.id, RenderLayout2BG0)
+	Layer_SetRenderFunc(Layout2_BG1.id, RenderLayout2BG1)
+	Layer_SetRenderFunc(Layout2_Pixie.id, Layers.UpdateData.UpdatePixie)
+	Layer_SetRenderFunc(Layout2_EOL.id, RenderNop)
 
 	rts
 }
@@ -110,6 +127,34 @@ donemove:
 
 	jsr UpdateObjData
 
+	// Copy Camera.XScroll into Tmp
+	_set16(Camera.XScroll, Tmp)
+
+	// Update scroll values for the next frame
+	ldx #Layout2_BG1.id
+
+	lda Tmp+0
+	jsr Layers.SetXPosLo
+	lda Tmp+1
+	jsr Layers.SetXPosHi
+
+	lda Tmp+0
+	jsr Layers.SetFineScroll
+
+	// divide Tmp by 2
+	_half16(Tmp)
+
+	// Update scroll values for the next frame
+	ldx #Layout2_BG0.id
+
+	lda Tmp+0
+	jsr Layers.SetXPosLo
+	lda Tmp+1
+	jsr Layers.SetXPosHi
+
+	lda Tmp+0
+	jsr Layers.SetFineScroll
+
 	lda DPadClick
 	and #$10
 	beq _not_fire
@@ -138,6 +183,49 @@ gsDrwPlay: {
 	jsr DrawObjData
 
 	rts
+}
+
+// ------------------------------------------------------------
+//
+RenderLayout2BG0: {
+	// 
+	ldx #Layout2_BG0.id
+	ldy #<BgMap1
+	ldz #>BgMap1
+	jsr Layers.UpdateData.UpdateLayer
+
+	// Set the fine Y scroll by moving TextYPos up
+	//
+	lda Camera.YScroll+0
+	and #$07
+#if V200
+	asl						// When in H200 mode, move 2x the number of pixels
+#endif
+	sta shiftUp
+
+	// Modify the TextYPos by shifting it up
+	sec
+	lda System.TopBorder+0
+	sbc shiftUp:#$00
+	sta $d04e
+	lda System.TopBorder+1
+	sbc #$00
+	and #$0f
+	sta $d04f
+
+	rts	
+}
+
+// ------------------------------------------------------------
+//
+RenderLayout2BG1: {
+	// 
+	ldx #Layout2_BG1.id
+	ldy #<BgMap2
+	ldz #>BgMap2
+	jsr Layers.UpdateData.UpdateLayer
+
+	rts	
 }
 
 // ------------------------------------------------------------
