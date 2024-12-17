@@ -84,21 +84,13 @@ SetFineScroll:
 }
 
 // ------------------------------------------------------------
-// X = Layout Id
-SelectLayout:
+ConfigureHW:
 {
-	stx LayoutId
+	ldx LayoutId
 
-	lda LayerBegin,x
-	sta BeginLayer
-	lda LayerEnd,x
-	sta	EndLayer
-
-	lda LayerLogSizeLo,x
-	sta LogicalRowSize+0
+	lda LogicalRowSize+0
 	sta Tmp+0
-	lda LayerLogSizeHi,x
-	sta LogicalRowSize+1
+	lda LogicalRowSize+1
 	sta Tmp+1
 
 	// set HW row width (in bytes)
@@ -124,6 +116,25 @@ SelectLayout:
 	// set HW number of rows
 	lda #NUM_ROWS
 	sta $d07b 
+
+	rts
+}
+
+// ------------------------------------------------------------
+// X = Layout Id
+SelectLayout:
+{
+	stx LayoutId
+
+	lda LayerBegin,x
+	sta BeginLayer
+	lda LayerEnd,x
+	sta	EndLayer
+
+	lda LayerLogSizeLo,x
+	sta LogicalRowSize+0
+	lda LayerLogSizeHi,x
+	sta LogicalRowSize+1
 
 	lda LayerPixieId,x
 	tay

@@ -36,14 +36,6 @@ gsIniPlay: {
 	ldx #Layout2.id
 	jsr Layers.SelectLayout
 
- 	ldx #Layout2_EOL.id
-	lda #<SCREEN_WIDTH
-	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
-	jsr Layers.SetXPosHi
-
-	jsr Layers.UpdateData.InitEOL
-
 	Layer_SetRenderFunc(Layout2_BG0.id, RenderLayout2BG0)
 	Layer_SetRenderFunc(Layout2_BG1.id, RenderLayout2BG1)
 	Layer_SetRenderFunc(Layout2_Pixie.id, Layers.UpdateData.UpdatePixie)
@@ -160,7 +152,7 @@ donemove:
 	beq _not_fire
 
 	lda #GStateTitles
-	jsr SwitchGameStates
+	sta RequestGameState
 
 _not_fire:
 
@@ -170,6 +162,14 @@ _not_fire:
 // ------------------------------------------------------------
 //
 gsDrwPlay: {
+
+ 	ldx #Layout2_EOL.id
+	lda #<SCREEN_WIDTH
+	jsr Layers.SetXPosLo
+	lda #>SCREEN_WIDTH
+	jsr Layers.SetXPosHi
+
+	jsr Layers.UpdateData.InitEOL
 
 	_set8im($0f, DrawPal)
 

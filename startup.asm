@@ -124,13 +124,14 @@ Tmp6:			.word $0000,$0000
 //
 .segment BSS "Main"
 
-GameState:		.byte $00				// Titles / Play / HiScore etc
-GameSubState:	.byte $00
-GameStateTimer:	.byte $00
-GameStateData:	.byte $00,$00,$00
+RequestGameState:	.byte $00
+GameState:			.byte $00				// Titles / Play / HiScore etc
+GameSubState:		.byte $00
+GameStateTimer:		.byte $00
+GameStateData:		.byte $00,$00,$00
 
-DPad:			.byte $00
-DPadClick:		.byte $00
+DPad:				.byte $00
+DPadClick:			.byte $00
 
 //--------------------------------------------------------
 // Main
@@ -259,6 +260,15 @@ mainloop:
 	// ALL pixie data and sets the X and Y scroll values
 	//
 	jsr Layers.UpdateBuffers
+	jsr Layers.ConfigureHW
+	
+	lda RequestGameState
+	cmp GameState
+	beq !+
+
+	jsr SwitchGameStates
+
+!:
 
 	DbgBord(0)
 
