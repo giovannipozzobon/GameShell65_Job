@@ -3,7 +3,7 @@
 //
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-//#define USE_DBG
+#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
