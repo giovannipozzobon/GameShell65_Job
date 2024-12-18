@@ -1,13 +1,15 @@
 // ------------------------------------------------------------
 // 
-.struct Layout { id, name, begin, end, pixieId, logicalSize }
+.var MAX_NUM_ROWS = 0
+
+.struct Layout { id, name, width, height, begin, end, pixieId, logicalSize, numRows }
 
 .var LayoutList = List()
 
 // ------------------------------------------------------------
 //
 
-.function NewLayout (name) 
+.function NewLayout (name, width, height, numRows) 
 {
 	.var id = LayoutList.size()
 
@@ -16,11 +18,19 @@
 	.eval LayoutList.add(Layout(
 		id,
 		name,
+		width,
+		height,
 		LayerList.size(),
 		0,
 		0,
-		0
+		0,
+		numRows
 	))
+
+	.if (numRows > MAX_NUM_ROWS)
+	{
+		.eval MAX_NUM_ROWS = numRows
+	}
 
 	// Reset layer tracking vars
 	.eval LOGICAL_ROW_SIZE = 0
@@ -32,9 +42,9 @@
 
 .function EndLayout (layout) 
 {
-	.if ((NUM_ROWS * LOGICAL_ROW_SIZE) > MAX_SCREEN_SIZE)
+	.if ((layout.numRows * LOGICAL_ROW_SIZE) > MAX_SCREEN_SIZE)
 	{
-		.eval MAX_SCREEN_SIZE = (NUM_ROWS * LOGICAL_ROW_SIZE)
+		.eval MAX_SCREEN_SIZE = (layout.numRows * LOGICAL_ROW_SIZE)
 	}
 
 	.eval layout.pixieId = PIXIE_LAYER

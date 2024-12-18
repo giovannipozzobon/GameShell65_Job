@@ -123,7 +123,7 @@ UpdateScrollPositions:
 
 	phx
 
-		ldy #NUM_ROWS
+		ldy Layout.NumRows
 !loop:
 		// Set GotoX position
 		ldz #0
@@ -323,7 +323,7 @@ UpdateData:
 		_add16(dst_attrib_ptr, Layout.LogicalRowSize, dst_attrib_ptr)
 
 		iny
-		cpy #NUM_ROWS
+		cpy Layout.NumRows
 		bne !-
 
 		rts
@@ -419,7 +419,7 @@ UpdateData:
 		_add16(tileDest, Layout.LogicalRowSize, tileDest)
 
 		inx
-		cpx #NUM_ROWS
+		cpx Layout.NumRows
 		bne !tloop-
 
 		// DMA attribute rows
@@ -453,7 +453,7 @@ UpdateData:
 		_add16(attribDest, Layout.LogicalRowSize, attribDest)
 
 		inx
-		cpx #NUM_ROWS
+		cpx Layout.NumRows
 		bne !aloop-
 
 		rts 

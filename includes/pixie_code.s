@@ -41,7 +41,7 @@ ClearWorkPixies: {
 	_add16im(rowAttribPtr, Layout1_Pixie.DataSize, rowAttribPtr)
 	
 	inx
-	cpx #NUM_ROWS
+	cpx Layout.NumRows
 	bne !-
 
 	// Clear the working pixie data using DMA
@@ -50,7 +50,7 @@ ClearWorkPixies: {
 	rts 
 Job:
 	DMAHeader(ClearPixieTile>>20, PixieWorkTiles>>20)
-	.for(var r=0; r<NUM_ROWS; r++) {
+	.for(var r=0; r<MAX_NUM_ROWS; r++) {
 		// Tile
 		DMACopyJob(
 			ClearPixieTile, 
@@ -62,7 +62,7 @@ Job:
 			ClearPixieAttrib,
 			PixieWorkAttrib + (r * Layout1_Pixie.DataSize),
 			Layout1_Pixie.DataSize,
-			(r!=(NUM_ROWS-1)), false)
+			(r!=(MAX_NUM_ROWS-1)), false)
 	}
 }	
 
@@ -127,7 +127,7 @@ DrawPixie:
 	dec
 	tax									// move yRow into X reg
 	bmi middleRow
-	cpx #NUM_ROWS
+	cpx Layout.NumRows
 	lbcs done
 
 	// See if number of words has been exhausted
@@ -189,7 +189,7 @@ middleRow:
     inw charIndx
 	inx
 	bmi bottomRow
-	cpx #NUM_ROWS
+	cpx Layout.NumRows
 	lbcs done
     
 	// See if number of words has been exhausted
@@ -257,7 +257,7 @@ bottomRow:
     inw charIndx
 	inx
 	bmi done
-	cpx #NUM_ROWS
+	cpx Layout.NumRows
 	lbcs done
 
 	// See if number of words has been exhausted
@@ -331,15 +331,15 @@ done:
 //
 .segment BSS "Pixie Work Lists"
 PixieRowScreenPtrLo:
-	.fill NUM_ROWS, $00
+	.fill MAX_NUM_ROWS, $00
 PixieRowScreenPtrHi:
-	.fill NUM_ROWS, $00
+	.fill MAX_NUM_ROWS, $00
 
 PixieRowAttribPtrLo:
-	.fill NUM_ROWS, $00
+	.fill MAX_NUM_ROWS, $00
 PixieRowAttribPtrHi:
-	.fill NUM_ROWS, $00
+	.fill MAX_NUM_ROWS, $00
 
 .segment BSS "Pixie Use Count"
 PixieUseCount:
-	.fill NUM_ROWS, $00
+	.fill MAX_NUM_ROWS, $00

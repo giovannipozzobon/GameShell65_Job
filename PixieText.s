@@ -88,7 +88,7 @@ endtxt:
 	lsr TextPosX+1
 	ror TextPosX+0
 
-	_set16im(SCREEN_WIDTH, Tmp)
+	_set16(Layout.LayoutWidth, Tmp)
 	_half16(Tmp)
 
 	sec

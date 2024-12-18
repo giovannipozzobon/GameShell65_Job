@@ -119,7 +119,8 @@ CenterFrameHorizontally:
 {
 	.var charXPos = Tmp				// 16bit
 
-	_set16im(LEFT_BORDER, charXPos)
+	_set16im(HORIZONTAL_CENTER, charXPos)
+	_sub16(charXPos, Layout.LayoutWidth, charXPos)
 
 	// SDBDRWDLSB,SDBDRWDMSB - Side Border size
 	lda charXPos+0
@@ -141,6 +142,7 @@ CenterFrameHorizontally:
 
 	rts
 }
+
 CenterFrameVertically: 
 {
 	.var verticalCenter = Tmp			// 16bit
@@ -148,7 +150,7 @@ CenterFrameVertically:
 	.var charYPos = Tmp1				// 16bit
 
 	// The half height of the screen in rasterlines is (charHeight / 2) * 2
-	_set16im(SCREEN_HEIGHT, halfCharHeight)
+	_set16(Layout.LayoutHeight, halfCharHeight)
 
 	// Figure out the vertical center of the screen
 

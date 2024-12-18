@@ -39,8 +39,11 @@ ConfigureHW:
 	sta $d063
 
 	// set HW number of rows
-	lda #NUM_ROWS
+	lda LayoutNumRows
 	sta $d07b 
+
+	jsr System.CenterFrameHorizontally
+	jsr System.CenterFrameVertically
 
 	rts
 }
@@ -62,6 +65,19 @@ SelectLayout:
 	sta LogicalRowSize+0
 	lda LayerLogSizeHi,x
 	sta LogicalRowSize+1
+
+	lda LayoutWidthLo,x
+	sta LayoutWidth+0
+	lda LayoutWidthHi,x
+	sta LayoutWidth+1
+
+	lda LayoutHeightLo,x
+	sta LayoutHeight+0
+	lda LayoutHeightHi,x
+	sta LayoutHeight+1
+
+	lda LayoutNumRows,x
+	sta NumRows
 
 	// grab the pixie layer and then grab the offset in bytes to the gotox token
 	lda LayerPixieId,x
@@ -109,6 +125,11 @@ LayerEnd:		.fill LayoutList.size(), LayoutList.get(i).end
 LayerLogSizeLo:	.fill LayoutList.size(), <LayoutList.get(i).logicalSize
 LayerLogSizeHi:	.fill LayoutList.size(), >LayoutList.get(i).logicalSize
 LayerPixieId:	.fill LayoutList.size(), LayoutList.get(i).pixieId
+LayoutWidthLo:	.fill LayoutList.size(), <LayoutList.get(i).width
+LayoutWidthHi:	.fill LayoutList.size(), >LayoutList.get(i).width
+LayoutHeightLo:	.fill LayoutList.size(), <LayoutList.get(i).height
+LayoutHeightHi:	.fill LayoutList.size(), >LayoutList.get(i).height
+LayoutNumRows:	.fill LayoutList.size(), LayoutList.get(i).numRows
 
 .segment BSS "Layout BSS"
 LayoutId:		.byte	$00
@@ -118,5 +139,10 @@ EndLayer:		.byte	$00
 
 LogicalRowSize:	.word 	$00
 PixieGotoOffs:	.word 	$00
+
+LayoutWidth:	.word 	$00
+LayoutHeight:	.word 	$00
+
+NumRows:		.byte 	$00
 
 }

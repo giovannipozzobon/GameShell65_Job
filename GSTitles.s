@@ -35,9 +35,9 @@ gsIniTitles: {
 	Layer_SetRenderFunc(Layout1_EOL.id, RenderNop)
 
 	ldx #Layout1_EOL.id
-	lda #<SCREEN_WIDTH
+	lda Layout.LayoutWidth+0
 	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
+	lda Layout.LayoutWidth+1
 	jsr Layers.SetXPosHi
 
 	rts
@@ -190,10 +190,10 @@ gsDrwTitles:
 
 
 	sec
-	lda #<SCREEN_WIDTH
+	lda Layout.LayoutWidth+0
 	sbc GameStateData+0
 	sta TextPosX+0
-	lda #>SCREEN_WIDTH
+	lda Layout.LayoutWidth+1
 	sbc GameStateData+1
 	sta TextPosX+1
 
@@ -224,9 +224,7 @@ RenderLayout1BG: {
 	//
 	lda Camera.YScroll+0
 	and #$07
-#if V200
 	asl						// When in H200 mode, move 2x the number of pixels
-#endif
 	sta shiftUp
 
 	// Modify the TextYPos by shifting it up

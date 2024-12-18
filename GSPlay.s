@@ -42,9 +42,9 @@ gsIniPlay: {
 	Layer_SetRenderFunc(Layout2_EOL.id, RenderNop)
 
  	ldx #Layout2_EOL.id
-	lda #<SCREEN_WIDTH
+	lda Layout.LayoutWidth+0
 	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
+	lda Layout.LayoutWidth+1
 	jsr Layers.SetXPosHi
 
 	rts
@@ -196,9 +196,7 @@ RenderLayout2BG0: {
 	//
 	lda Camera.YScroll+0
 	and #$07
-#if V200
 	asl						// When in H200 mode, move 2x the number of pixels
-#endif
 	sta shiftUp
 
 	// Modify the TextYPos by shifting it up

@@ -20,13 +20,11 @@
 // ------------------------------------------------------------
 // Defines to describe the screen size
 //
-// If you use H320 then SCREEN_WIDTH much be <= 360, otherwise <= 720
-#define H320
 .const SCREEN_WIDTH = 320+32
+.const SCREEN_HEIGHT = 128
 
-// If you use V200 then SCREEN_HEIGHT much be <= 240, otherwise <= 480
-#define V200
-.const SCREEN_HEIGHT = 200
+.const PLAY_SCREEN_WIDTH = 256
+.const PLAY_SCREEN_HEIGHT = 200
 
 // ------------------------------------------------------------
 //
@@ -48,19 +46,9 @@
 #import "includes/layout_Functions.s"
 #import "includes/assets_Functions.s"
 
-.print "TOP_BORDER = " + TOP_BORDER
-
 // ------------------------------------------------------------
 // Layer constants
 //
-// Horizontally scrolling NCM needs full screen width + 1 tile to shift in when scrolling
-//
-.const NCM_TILES_WIDE = (SCREEN_WIDTH/16) + 1
-
-// Vertically we want to show the full screen height (used to define the top and bottom borders)
-// but the actual number of rows is + 1 so we can shift in the new row when scrolling
-//
-.const NUM_ROWS = (SCREEN_HEIGHT / 8) + 1
 
 // Maximum number of Pixie words use per row, 1 pixie is 2 words (GOTOX + CHAR)
 //
@@ -75,16 +63,16 @@
 //
 // 3) Always end with EOL layer
 //
-.const Layout1 = NewLayout("titles")
-.const Layout1_BG = Layer_BG("bg_level", NCM_TILES_WIDE, true, 1)
+.const Layout1 = NewLayout("titles", SCREEN_WIDTH, SCREEN_HEIGHT, (SCREEN_HEIGHT / 8) + 1)
+.const Layout1_BG = Layer_BG("bg_level", (SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout1_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
 .const Layout1_EOL = Layer_EOL("eol")
 .const Layout1end = EndLayout(Layout1)
 
-.const Layout2 = NewLayout("play")
-.const Layout2_BG0 = Layer_BG("bg_level0", NCM_TILES_WIDE, true, 1)
+.const Layout2 = NewLayout("play", PLAY_SCREEN_WIDTH, PLAY_SCREEN_HEIGHT, (PLAY_SCREEN_HEIGHT / 8) + 1)
+.const Layout2_BG0 = Layer_BG("bg_level0", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout2_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
-.const Layout2_BG1 = Layer_BG("bg_level1", NCM_TILES_WIDE, true, 1)
+.const Layout2_BG1 = Layer_BG("bg_level1", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout2_EOL = Layer_EOL("eol")
 .const Layout2end = EndLayout(Layout2)
 
@@ -752,9 +740,9 @@ Bg1Tiles:
 //
 .segment PixieWorkRam "Pixie Work RAM"
 PixieWorkTiles:
-	.fill (Layout1_Pixie.DataSize * NUM_ROWS), $00
+	.fill (Layout1_Pixie.DataSize * MAX_NUM_ROWS), $00
 PixieWorkAttrib:
-	.fill (Layout1_Pixie.DataSize * NUM_ROWS), $00
+	.fill (Layout1_Pixie.DataSize * MAX_NUM_ROWS), $00
 
 .segment MapRam "Map RAM"
 BGMap0TileRAM:
