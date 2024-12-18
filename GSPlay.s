@@ -41,10 +41,12 @@ gsIniPlay: {
 	Layer_SetRenderFunc(Layout2_Pixie.id, Layers.UpdateData.UpdatePixie)
 	Layer_SetRenderFunc(Layout2_EOL.id, RenderNop)
 
- 	ldx #Layout2_EOL.id
-	lda Layout.LayoutWidth+0
+	_set16(Layout.LayoutWidth, Tmp)
+	
+	ldx #Layout2_EOL.id
+	lda Tmp+0
 	jsr Layers.SetXPosLo
-	lda Layout.LayoutWidth+1
+	lda Tmp+1
 	jsr Layers.SetXPosHi
 
 	rts

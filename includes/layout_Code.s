@@ -13,10 +13,7 @@ ConfigureHW:
 {
 	ldx LayoutId
 
-	lda LogicalRowSize+0
-	sta Tmp+0
-	lda LogicalRowSize+1
-	sta Tmp+1
+	_set16(LogicalRowSize, Tmp)
 
 	// set HW row width (in bytes)
 	_set16(LogicalRowSize, $d058)
@@ -39,7 +36,7 @@ ConfigureHW:
 	sta $d063
 
 	// set HW number of rows
-	lda LayoutNumRows
+	lda NumRows
 	sta $d07b 
 
 	jsr System.CenterFrameHorizontally

@@ -34,10 +34,12 @@ gsIniTitles: {
 	Layer_SetRenderFunc(Layout1_Pixie.id, Layers.UpdateData.UpdatePixie)
 	Layer_SetRenderFunc(Layout1_EOL.id, RenderNop)
 
+	_set16(Layout.LayoutWidth, Tmp)
+	
 	ldx #Layout1_EOL.id
-	lda Layout.LayoutWidth+0
+	lda Tmp+0
 	jsr Layers.SetXPosLo
-	lda Layout.LayoutWidth+1
+	lda Tmp+1
 	jsr Layers.SetXPosHi
 
 	rts
