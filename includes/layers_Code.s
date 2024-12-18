@@ -84,101 +84,6 @@ SetFineScroll:
 }
 
 // ------------------------------------------------------------
-ConfigureHW:
-{
-	ldx LayoutId
-
-	lda LogicalRowSize+0
-	sta Tmp+0
-	lda LogicalRowSize+1
-	sta Tmp+1
-
-	// set HW row width (in bytes)
-	_set16(LogicalRowSize, $d058)
-
-	// Divide Tmp by 2 to get number of characters
-	_half16(Tmp)
-
-	// Shift Tmp+1 up by 4 
-	asl Tmp+1
-	asl Tmp+1
-	asl Tmp+1
-	asl Tmp+1
-
-	// set HW number of characters
-	lda Tmp+0
-	sta $d05e
-	lda $d063
-	and #$cf
-	ora Tmp+1
-	sta $d063
-
-	// set HW number of rows
-	lda #NUM_ROWS
-	sta $d07b 
-
-	rts
-}
-
-// ------------------------------------------------------------
-// X = Layout Id
-SelectLayout:
-{
-	stx LayoutId
-
-	// grab the limits of the active layers
-	lda LayerBegin,x
-	sta BeginLayer
-	lda LayerEnd,x
-	sta	EndLayer
-
-	// grab the logical size in bytes of each line
-	lda LayerLogSizeLo,x
-	sta LogicalRowSize+0
-	lda LayerLogSizeHi,x
-	sta LogicalRowSize+1
-
-	// grab the pixie layer and then grab the offset in bytes to the gotox token
-	lda LayerPixieId,x
-	tay
-	lda LogOffsLo,y
-	sta PixieGotoOffs+0
-	lda LogOffsHi,y
-	sta PixieGotoOffs+1
-
-	rts
-}
-
-// ------------------------------------------------------------
-//
-UpdateBuffers:
-{
-	// For each of the layers, call the render function
-	//
-	ldx BeginLayer
-
-!layerloop:
-	phx
-	lda RenderFuncLo,x
-	sta Tmp+0
-	lda RenderFuncHi,x
-	sta Tmp+1
-	jsr (Tmp)
-	plx
-
-	inx
-	cpx EndLayer
-	bne !layerloop-
-
-	// Update all of the (horizontal) scroll positions
- 	jsr UpdateScrollPositions
-
-	jsr UpdateData.InitEOL
-
-	rts
-}
-
-// ------------------------------------------------------------
 //
 UpdateScrollPositions: 
 {
@@ -186,7 +91,7 @@ UpdateScrollPositions:
 	.var attrib_ptr = Tmp1		// 32bit
 	.var gotoOffs = Tmp2		// 16bit
 
-	ldx BeginLayer
+	ldx Layout.BeginLayer
 
 !layerloop:
 	lda Layers.ScrollUpdate,x
@@ -232,8 +137,8 @@ UpdateScrollPositions:
 		lda #$00
 		sta ((attrib_ptr)),z
 
-	    _add16(tile_ptr, LogicalRowSize, tile_ptr)
-	    _add16(attrib_ptr, LogicalRowSize, attrib_ptr)
+	    _add16(tile_ptr, Layout.LogicalRowSize, tile_ptr)
+	    _add16(attrib_ptr, Layout.LogicalRowSize, attrib_ptr)
 
 		dey
 		lbne !loop-
@@ -243,7 +148,7 @@ UpdateScrollPositions:
 !layerskip:
 
 	inx
-	cpx EndLayer
+	cpx Layout.EndLayer
 	lbne !layerloop-
 
 	rts
@@ -369,7 +274,7 @@ UpdateData:
 		_set32im(PixieWorkTiles, src_tile_ptr)
 		_set32im(PixieWorkAttrib, src_attrib_ptr)
 
-		_set16(PixieGotoOffs, dst_offset)
+		_set16(Layout.PixieGotoOffs, dst_offset)
 		_set16im(Layout1_Pixie.DataSize, copy_length)
 
 		_set16im(0, src_offset)
@@ -390,7 +295,7 @@ UpdateData:
 		_set32im(COLOR_RAM, dst_attrib_ptr)
 
 		// get the selected layout's last layer
-		ldx EndLayer
+		ldx Layout.EndLayer
 		dex
 
 		lda ChrOffsLo,x
@@ -414,8 +319,8 @@ UpdateData:
 		lda #$00
 		sta ((dst_attrib_ptr)),z
 
-		_add16(dst_tile_ptr, LogicalRowSize, dst_tile_ptr)
-		_add16(dst_attrib_ptr, LogicalRowSize, dst_attrib_ptr)
+		_add16(dst_tile_ptr, Layout.LogicalRowSize, dst_tile_ptr)
+		_add16(dst_attrib_ptr, Layout.LogicalRowSize, dst_attrib_ptr)
 
 		iny
 		cpy #NUM_ROWS
@@ -511,7 +416,7 @@ UpdateData:
 		RunDMAJob(TileJob)
 
 		_add16(tileSource, src_stride, tileSource)
-		_add16(tileDest, LogicalRowSize, tileDest)
+		_add16(tileDest, Layout.LogicalRowSize, tileDest)
 
 		inx
 		cpx #NUM_ROWS
@@ -545,7 +450,7 @@ UpdateData:
 		RunDMAJob(AttribJob)
 
 		_add16(attribSource, src_stride, attribSource)
-		_add16(attribDest, LogicalRowSize, attribDest)
+		_add16(attribDest, Layout.LogicalRowSize, attribDest)
 
 		inx
 		cpx #NUM_ROWS
@@ -608,29 +513,15 @@ ChrOffsHi:		.fill LayerList.size(), >LayerList.get(i).ChrOffs
 ChrSizeLo:		.fill LayerList.size(), <LayerList.get(i).ChrSize
 ChrSizeHi:		.fill LayerList.size(), >LayerList.get(i).ChrSize
 
-LayerBegin:		.fill LayoutList.size(), LayoutList.get(i).begin
-LayerEnd:		.fill LayoutList.size(), LayoutList.get(i).end
-LayerLogSizeLo:	.fill LayoutList.size(), <LayoutList.get(i).logicalSize
-LayerLogSizeHi:	.fill LayoutList.size(), >LayoutList.get(i).logicalSize
-LayerPixieId:	.fill LayoutList.size(), LayoutList.get(i).pixieId
-
 .segment BSS "Layer BSS"
-LayoutId:		.byte	$00
-
-BeginLayer:		.byte	$00
-EndLayer:		.byte	$00
-
-LogicalRowSize:	.word 	$00
-PixieGotoOffs:	.word 	$00
-
 
 ScrollUpdate:	.fill LayerList.size(), $00
 
 RenderFuncLo:	.fill LayerList.size(), $00
 RenderFuncHi:	.fill LayerList.size(), $00
 
-ScrollXLo:	.fill LayerList.size(), $40
-ScrollXHi:	.fill LayerList.size(), $01
+ScrollXLo:		.fill LayerList.size(), $40
+ScrollXHi:		.fill LayerList.size(), $01
 
 FineScrollXLo:	.fill LayerList.size(), $40
 FineScrollXHi:	.fill LayerList.size(), $01

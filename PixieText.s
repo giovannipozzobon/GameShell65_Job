@@ -88,11 +88,14 @@ endtxt:
 	lsr TextPosX+1
 	ror TextPosX+0
 
+	_set16im(SCREEN_WIDTH, Tmp)
+	_half16(Tmp)
+
 	sec
-	lda #<(SCREEN_WIDTH/2)
+	lda Tmp+0
 	sbc TextPosX+0
 	sta TextPosX+0
-	lda #>(SCREEN_WIDTH/2)
+	lda Tmp+1
 	sbc TextPosX+1
 	sta TextPosX+1
 

@@ -28,7 +28,7 @@ gsIniTitles: {
 
 	// Ensure layer system is initialized
 	ldx #Layout1.id
-	jsr Layers.SelectLayout
+	jsr Layout.SelectLayout
 
 	Layer_SetRenderFunc(Layout1_BG.id, RenderLayout1BG)
 	Layer_SetRenderFunc(Layout1_Pixie.id, Layers.UpdateData.UpdatePixie)

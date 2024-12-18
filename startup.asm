@@ -45,6 +45,7 @@
 #import "includes/m65macros.s"
 
 #import "includes/layers_Functions.s"
+#import "includes/layout_Functions.s"
 #import "includes/assets_Functions.s"
 
 .print "TOP_BORDER = " + TOP_BORDER
@@ -159,6 +160,7 @@ DPadClick:			.byte $00
 #import "Irq.s"
 
 #import "includes/layers_code.s"
+#import "includes/layout_code.s"
 #import "includes/assets_code.s"
 #import "includes/system_code.s"
 #import "includes/fastLoader.s"
@@ -259,8 +261,8 @@ mainloop:
 	// Update the layer buffers for the coming frame, this DMAs the BG layer and
 	// ALL pixie data and sets the X and Y scroll values
 	//
-	jsr Layers.ConfigureHW
-	jsr Layers.UpdateBuffers
+	jsr Layout.ConfigureHW
+	jsr Layout.UpdateBuffers
 
 	lda RequestGameState
 	cmp GameState

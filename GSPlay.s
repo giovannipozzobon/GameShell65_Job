@@ -34,7 +34,7 @@ gsIniPlay: {
 
 	// Ensure layer system is initialized
 	ldx #Layout2.id
-	jsr Layers.SelectLayout
+	jsr Layout.SelectLayout
 
 	Layer_SetRenderFunc(Layout2_BG0.id, RenderLayout2BG0)
 	Layer_SetRenderFunc(Layout2_BG1.id, RenderLayout2BG1)
