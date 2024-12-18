@@ -259,9 +259,9 @@ mainloop:
 	// Update the layer buffers for the coming frame, this DMAs the BG layer and
 	// ALL pixie data and sets the X and Y scroll values
 	//
-	jsr Layers.UpdateBuffers
 	jsr Layers.ConfigureHW
-	
+	jsr Layers.UpdateBuffers
+
 	lda RequestGameState
 	cmp GameState
 	beq !+

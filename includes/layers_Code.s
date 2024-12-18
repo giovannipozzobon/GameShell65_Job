@@ -126,19 +126,21 @@ SelectLayout:
 {
 	stx LayoutId
 
+	// grab the limits of the active layers
 	lda LayerBegin,x
 	sta BeginLayer
 	lda LayerEnd,x
 	sta	EndLayer
 
+	// grab the logical size in bytes of each line
 	lda LayerLogSizeLo,x
 	sta LogicalRowSize+0
 	lda LayerLogSizeHi,x
 	sta LogicalRowSize+1
 
+	// grab the pixie layer and then grab the offset in bytes to the gotox token
 	lda LayerPixieId,x
 	tay
-
 	lda LogOffsLo,y
 	sta PixieGotoOffs+0
 	lda LogOffsHi,y
@@ -170,6 +172,8 @@ UpdateBuffers:
 
 	// Update all of the (horizontal) scroll positions
  	jsr UpdateScrollPositions
+
+	jsr UpdateData.InitEOL
 
 	rts
 }

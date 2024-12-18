@@ -41,6 +41,12 @@ gsIniPlay: {
 	Layer_SetRenderFunc(Layout2_Pixie.id, Layers.UpdateData.UpdatePixie)
 	Layer_SetRenderFunc(Layout2_EOL.id, RenderNop)
 
+ 	ldx #Layout2_EOL.id
+	lda #<SCREEN_WIDTH
+	jsr Layers.SetXPosLo
+	lda #>SCREEN_WIDTH
+	jsr Layers.SetXPosHi
+
 	rts
 }
 
@@ -161,16 +167,8 @@ _not_fire:
 
 // ------------------------------------------------------------
 //
-gsDrwPlay: {
-
- 	ldx #Layout2_EOL.id
-	lda #<SCREEN_WIDTH
-	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
-	jsr Layers.SetXPosHi
-
-	jsr Layers.UpdateData.InitEOL
-
+gsDrwPlay: 
+{
 	_set8im($0f, DrawPal)
 
 	// _set16im(0, DrawPosX)

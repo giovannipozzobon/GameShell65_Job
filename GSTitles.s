@@ -34,6 +34,12 @@ gsIniTitles: {
 	Layer_SetRenderFunc(Layout1_Pixie.id, Layers.UpdateData.UpdatePixie)
 	Layer_SetRenderFunc(Layout1_EOL.id, RenderNop)
 
+	ldx #Layout1_EOL.id
+	lda #<SCREEN_WIDTH
+	jsr Layers.SetXPosLo
+	lda #>SCREEN_WIDTH
+	jsr Layers.SetXPosHi
+
 	rts
 }
 
@@ -135,16 +141,8 @@ _not_fire:
 
 // ------------------------------------------------------------
 //
-gsDrwTitles: {
-
- 	ldx #Layout1_EOL.id
-	lda #<SCREEN_WIDTH
-	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
-	jsr Layers.SetXPosHi
-
-	jsr Layers.UpdateData.InitEOL
-
+gsDrwTitles: 
+{
 	_set8im($0f, DrawPal)
 
 	// _set16im(0, DrawPosX)
