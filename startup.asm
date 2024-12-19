@@ -56,7 +56,7 @@
 .const NUM_PIXIEWORDS = NUM_PIXIES * 2
 
 // ------------------------------------------------------------
-// Layer layout for this example
+// Layer layout for title screen example
 //
 // 1) BG layer for background
 // 2) Pixie layer for you know, pixies
@@ -69,6 +69,15 @@
 .const Layout1_EOL = Layer_EOL("eol")
 .const Layout1end = EndLayout(Layout1)
 
+// ------------------------------------------------------------
+// Layer layout for game screen example
+//
+// 1) BG0 layer for background
+// 1) BG1 layer for midground
+// 2) Pixie layer for you know, pixies
+//
+// 3) Always end with EOL layer
+//
 .const Layout2 = NewLayout("play", PLAY_SCREEN_WIDTH, PLAY_SCREEN_HEIGHT, (PLAY_SCREEN_HEIGHT / 8))
 .const Layout2_BG0 = Layer_BG("bg_level0", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout2_BG1 = Layer_BG("bg_level1", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
