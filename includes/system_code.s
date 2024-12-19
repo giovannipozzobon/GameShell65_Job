@@ -195,7 +195,8 @@ isPal:
 	lda charYPos+1
 	tsb $d04f
 
-	_add16im(BotBorder, 1, IRQBotPos)
+	//_add16im(BotBorder, 2, IRQBotPos)
+	_add16im(verticalCenter, (MAX_HEIGHT)+2, IRQBotPos)
 
 	lsr IRQBotPos+1
 	ror IRQBotPos+0

@@ -1,6 +1,7 @@
 // ------------------------------------------------------------
 // 
 .var MAX_NUM_ROWS = 0
+.var MAX_HEIGHT = 0
 
 .struct Layout { id, name, width, height, begin, end, pixieId, logicalSize, numRows }
 
@@ -30,6 +31,11 @@
 	.if (numRows > MAX_NUM_ROWS)
 	{
 		.eval MAX_NUM_ROWS = numRows
+	}
+
+	.if (height > MAX_HEIGHT)
+	{
+		.eval MAX_HEIGHT = height
 	}
 
 	// Reset layer tracking vars

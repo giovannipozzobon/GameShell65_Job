@@ -154,18 +154,6 @@ gsDrwTitles:
 	// jsr DrawPixie
 	// rts
 
-	DbgBord(9)
-
-	TextSetPos($30,$28)
-	TextSetMsgPtr(testTxt1)
-	TextDrawSpriteMsg(true, 0, true)
-
-	DbgBord(10)
-
-	TextSetPos($30,$68)
-	TextSetMsgPtr(testTxt2)
-	TextDrawSpriteMsg(true, 64, true)
-
 	DbgBord(11)
 
 	// lda System.TopBorder+0
@@ -187,7 +175,7 @@ gsDrwTitles:
 	// TextSetMsgPtr(testTxt3)
 	// TextDrawSpriteMsg(true, 0, false)
 
-	lda #$a0
+	lda #$50
 	sta TextPosY
 
 
@@ -208,7 +196,19 @@ gsDrwTitles:
     lda introTxtTable+1,y
     sta TextPtr+1
 
-	TextDrawSpriteMsg(false, 0, true)
+	TextDrawSpriteMsg(false, 192, true)
+
+	DbgBord(9)
+
+	TextSetPos($30,$20)
+	TextSetMsgPtr(testTxt1)
+	TextDrawSpriteMsg(true, 0, true)
+
+	DbgBord(10)
+
+	TextSetPos($30,$70)
+	TextSetMsgPtr(testTxt2)
+	TextDrawSpriteMsg(true, 64, true)
 
 	rts
 }

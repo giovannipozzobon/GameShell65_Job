@@ -24,7 +24,7 @@
 .const SCREEN_HEIGHT = 128
 
 .const PLAY_SCREEN_WIDTH = 256
-.const PLAY_SCREEN_HEIGHT = 200
+.const PLAY_SCREEN_HEIGHT = 200+32+8
 
 // ------------------------------------------------------------
 //
@@ -224,6 +224,7 @@ Entry:
 //	TextPrintMsg(imessage)
 
 	lda #GStateTitles
+	sta RequestGameState
 	jsr SwitchGameStates
 
 	jsr InitBGMap

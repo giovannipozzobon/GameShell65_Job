@@ -187,7 +187,8 @@ gsDrwPlay:
 
 // ------------------------------------------------------------
 //
-RenderLayout2BG0: {
+RenderLayout2BG0: 
+{
 	// 
 	ldx #Layout2_BG0.id
 	ldy #<BgMap1
@@ -196,27 +197,28 @@ RenderLayout2BG0: {
 
 	// Set the fine Y scroll by moving TextYPos up
 	//
-	lda Camera.YScroll+0
-	and #$07
-	asl						// When in H200 mode, move 2x the number of pixels
-	sta shiftUp
+	// lda Camera.YScroll+0
+	// and #$07
+	// asl						// When in H200 mode, move 2x the number of pixels
+	// sta shiftUp
 
 	// Modify the TextYPos by shifting it up
-	sec
-	lda System.TopBorder+0
-	sbc shiftUp:#$00
-	sta $d04e
-	lda System.TopBorder+1
-	sbc #$00
-	and #$0f
-	sta $d04f
+	// sec
+	// lda System.TopBorder+0
+	// sbc shiftUp:#$00
+	// sta $d04e
+	// lda System.TopBorder+1
+	// sbc #$00
+	// and #$0f
+	// sta $d04f
 
 	rts	
 }
 
 // ------------------------------------------------------------
 //
-RenderLayout2BG1: {
+RenderLayout2BG1: 
+{
 	// 
 	ldx #Layout2_BG1.id
 	ldy #<BgMap2
