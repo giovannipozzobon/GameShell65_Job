@@ -28,7 +28,7 @@ gsIniPlay: {
 	_set16im($0000, Camera.CamVelY)
 
 	_set16im($0000, Camera.XScroll)
-	_set16im($0001, Camera.CamVelX)
+	_set16im($0002, Camera.CamVelX)
 
 	jsr InitObjData
 

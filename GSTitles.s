@@ -231,10 +231,10 @@ RenderLayout1BG: {
 
 	// Modify the TextYPos by shifting it up
 	sec
-	lda System.TopBorder+0
+	lda System.TextYPos+0
 	sbc shiftUp:#$00
 	sta $d04e
-	lda System.TopBorder+1
+	lda System.TextYPos+1
 	sbc #$00
 	and #$0f
 	sta $d04f

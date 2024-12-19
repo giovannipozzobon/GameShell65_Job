@@ -13,6 +13,7 @@
 .segment BSS "System ZP"
 TopBorder:		.word $0000
 BotBorder:		.word $0000
+TextYPos:		.word $0000
 IRQBotPos:		.word $0000
 
 Flags:			.byte $00
@@ -147,7 +148,6 @@ CenterFrameVertically:
 {
 	.var verticalCenter = Tmp			// 16bit
 	.var halfCharHeight = Tmp+2			// 16bit
-	.var charYPos = Tmp1				// 16bit
 
 	// The half height of the screen in rasterlines is (charHeight / 2) * 2
 	_set16(Layout.LayoutHeight, halfCharHeight)
@@ -168,7 +168,18 @@ isPal:
 	_sub16(verticalCenter, halfCharHeight, TopBorder)
 	_add16(verticalCenter, halfCharHeight, BotBorder)
 
-	_set16(TopBorder, charYPos)
+	_set16(TopBorder, TextYPos)
+
+	// hack!!
+	// If we are running on real hardware then adjust char Y start up to avoid 2 pixel Y=0 bug
+	lda $d60f
+	and #%00100000
+	beq !+
+
+	_add16im(TopBorder, 3, TopBorder)
+	_add16im(BotBorder, 3, BotBorder)
+
+!:
 
 	// Set these values on the hardware
 	// TBDRPOS - Top Border
@@ -188,11 +199,11 @@ isPal:
 	tsb $d04b
 
 	// TEXTYPOS - CharYStart
-	lda charYPos+0
+	lda TextYPos+0
 	sta $d04e
 	lda #%00001111
 	trb $d04f
-	lda charYPos+1
+	lda TextYPos+1
 	tsb $d04f
 
 	//_add16im(BotBorder, 2, IRQBotPos)

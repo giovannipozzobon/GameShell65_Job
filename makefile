@@ -56,13 +56,14 @@ data: map
 	$(PNG65) sprites --ncm --size 16,16 --input "assets/font.png" --output "sdcard" --nofill
 
 run: all
-	$(XEMU) -autoload -8 $(DISKNAME) -uartmon :4510 -videostd 1
+	$(XEMU) -autoload -8 $(DISKNAME) -uartmon :4510 -videostd 0
 
 push: all
 	$(MEGA65_FTP) -F -l $(JTAG) -c "put $(DISKNAME)" -c "quit"
 
 eth: all
 	$(EMEGA65_FTP) $(EMEGA65_FTP_ARGS)
+	$(ETHERLOAD) $(ETHERLOAD_ARGS)
 
 qq: all
 	$(ETHERLOAD) $(ETHERLOAD_ARGS)

@@ -20,11 +20,11 @@
 // ------------------------------------------------------------
 // Defines to describe the screen size
 //
-.const SCREEN_WIDTH = 320+32
+.const SCREEN_WIDTH = 320
 .const SCREEN_HEIGHT = 128
 
-.const PLAY_SCREEN_WIDTH = 256
-.const PLAY_SCREEN_HEIGHT = 200+32+8
+.const PLAY_SCREEN_WIDTH = 320+32
+.const PLAY_SCREEN_HEIGHT = 208
 
 // ------------------------------------------------------------
 //
@@ -69,10 +69,10 @@
 .const Layout1_EOL = Layer_EOL("eol")
 .const Layout1end = EndLayout(Layout1)
 
-.const Layout2 = NewLayout("play", PLAY_SCREEN_WIDTH, PLAY_SCREEN_HEIGHT, (PLAY_SCREEN_HEIGHT / 8) + 1)
+.const Layout2 = NewLayout("play", PLAY_SCREEN_WIDTH, PLAY_SCREEN_HEIGHT, (PLAY_SCREEN_HEIGHT / 8))
 .const Layout2_BG0 = Layer_BG("bg_level0", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
-.const Layout2_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
 .const Layout2_BG1 = Layer_BG("bg_level1", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout2_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
 .const Layout2_EOL = Layer_EOL("eol")
 .const Layout2end = EndLayout(Layout2)
 
