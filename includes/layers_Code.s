@@ -57,7 +57,7 @@ SetYPosLo:
 // A = Layer position Y Hi
 SetYPosHi:
 {
-	sta ScrollXHi,x
+	sta ScrollYHi,x
 	rts
 }
 
@@ -175,6 +175,31 @@ UpdateData:
 
 	.var bgDesc = Tmp5				// 16bit
 
+	OffsetTilePtr: {
+		// Calculate which row data to add this character to, we
+		// are using the MUL hardware here to avoid having a row table.
+		// 
+		// This translates to $d778-A = (ScrollY1>>3) * MAP_LOGICAL_SIZE
+		//
+		lda $d771
+		lsr
+		ror $d770
+		lsr
+		ror $d770
+		lsr
+		ror $d770
+		sta $d771
+
+		lda #$00
+		sta $d772
+		sta $d776
+
+		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to tile ptrs
+		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
+
+		rts
+	}
+
 	UpdateLayer: {
 		sty bgDesc+0
 		stz bgDesc+1
@@ -209,37 +234,23 @@ UpdateData:
 		// Calculate which row data to add this character to, we
 		// are using the MUL hardware here to avoid having a row table.
 		// 
-		// This translates to $d778-A = (ObjPosY>>3) * LOGICAL_OBJS_SIZE
+		// This translates to $d778-A = (yScroll>>3) * mapLogicalWidth
 		//
-		lda Camera.YScroll+0				// Add ObjPosY >> 3 to charPtr and attribPtr
-		sta $d770 //hw mult A lsb
-		lda Camera.YScroll+1
-		sta $d771
-
-		lda $d771
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		sta $d771
-
-		lda #$00
-		sta $d772
-		sta $d776
+		lda ScrollYLo,x
+		sta $d770					// mul A lsb
+		lda ScrollYHi,x
+		sta $d771					// mul A msb
 
 		lda (bgDesc),y
-		sta $d774
+		sta $d774					// mul B lsb
 		sta src_stride+0
 		iny
 		lda (bgDesc),y
-		sta $d775
+		sta $d775					// mul B msb
 		sta src_stride+1
 		iny
 
-		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to char and attrib ptrs
-		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
+		jsr OffsetTilePtr
 
 		lda ChrOffsLo,x
 		sta dst_offset+0

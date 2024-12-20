@@ -129,6 +129,11 @@ donemove:
 	lda Camera.XScroll+0
 	jsr Layers.SetFineScroll
 
+	lda Camera.YScroll+0
+	jsr Layers.SetYPosLo
+	lda Camera.YScroll+1
+	jsr Layers.SetYPosHi
+
 	lda DPadClick
 	and #$10
 	beq _not_fire
