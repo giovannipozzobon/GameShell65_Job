@@ -13,7 +13,7 @@
 
 .const SCREEN_RAM = $50000		// 
 
-.const MAP_RAM = $20000
+.const MAP_RAM = $40000
 
 .const CHARS_RAM = $10000
 
