@@ -3,7 +3,7 @@
 //
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-#define USE_DBG
+//#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -33,10 +33,10 @@
 .segmentdef Data [start=$a000, max=$cfff]
 .segmentdef BSS [start=$e000, max=$f400, virtual]
 
+.segmentdef MapRam [start=MAP_RAM, max=SCREEN_RAM-1, virtual]
+
 .segmentdef ScreenRam [start=SCREEN_RAM, virtual]
 .segmentdef PixieWorkRam [startAfter="ScreenRam", max=SCREEN_RAM+$ffff, virtual]
-
-.segmentdef MapRam [start=MAP_RAM, virtual]
 
 .cpu _45gs02				
 
