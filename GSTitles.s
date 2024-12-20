@@ -127,7 +127,7 @@ donemove:
 	jsr Layers.SetXPosHi
 
 	lda Camera.XScroll+0
-	jsr Layers.SetFineScroll
+	jsr Layers.SetFineScrollX
 
 	lda Camera.YScroll+0
 	jsr Layers.SetYPosLo
@@ -152,6 +152,9 @@ gsDrwTitles:
 {
 	_set8im($0f, DrawPal)
 
+	lda Camera.YScroll+0
+	sta PixieYShift
+	
 	// _set16im(0, DrawPosX)
 	// _set16im(16, DrawPosY)
 	// _set16im(sprFont.baseChar, DrawBaseChr)

@@ -1,16 +1,14 @@
 // ------------------------------------------------------------
 //
-.const NUM_OBJS1 = 256
+.segment Zeropage "GameState Credits"
 
-.segment Zeropage "GameState Play"
-
-.segment Code "GameState Play"
+.segment Code "GameState Credits"
 
 // ------------------------------------------------------------
 //
 // Titles State - show titles screen
 //
-gsIniPlay: {
+gsIniCredits: {
 
 	lda #$00
 	sta Irq.VBlankCount
@@ -25,7 +23,7 @@ gsIniPlay: {
 	sta GameStateData+2
 
 	_set16im($0000, Camera.YScroll)
-	_set16im($0000, Camera.CamVelY)
+	_set16im($0001, Camera.CamVelY)
 
 	_set16im($0000, Camera.XScroll)
 	_set16im($0002, Camera.CamVelX)
@@ -33,17 +31,19 @@ gsIniPlay: {
 	jsr InitObjData
 
 	// Ensure layer system is initialized
-	ldx #Layout2.id
+	ldx #Layout3.id
 	jsr Layout.SelectLayout
 
-	Layer_SetRenderFunc(Layout2_BG0.id, RenderLayout2BG0)
-	Layer_SetRenderFunc(Layout2_BG1.id, RenderLayout2BG1)
-	Layer_SetRenderFunc(Layout2_Pixie.id, Layers.UpdateData.UpdatePixie)
-	Layer_SetRenderFunc(Layout2_EOL.id, RenderNop)
+	Layer_SetRenderFunc(Layout3_BG0a.id, RenderLayout3BG0a)
+	Layer_SetRenderFunc(Layout3_BG0b.id, RenderLayout3BG0b)
+	Layer_SetRenderFunc(Layout3_BG1a.id, RenderLayout3BG1a)
+	Layer_SetRenderFunc(Layout3_BG1b.id, RenderLayout3BG1b)
+	Layer_SetRenderFunc(Layout3_Pixie.id, Layers.UpdateData.UpdatePixie)
+	Layer_SetRenderFunc(Layout3_EOL.id, RenderNop)
 
 	_set16(Layout.LayoutWidth, Tmp)
 	
-	ldx #Layout2_EOL.id
+	ldx #Layout3_EOL.id
 	lda Tmp+0
 	jsr Layers.SetXPosLo
 	lda Tmp+1
@@ -54,7 +54,7 @@ gsIniPlay: {
 
 // ------------------------------------------------------------
 //
-gsUpdPlay: {
+gsUpdCredits: {
 	// Inc the game state timer
 	_add16im(GameStateData, 1, GameStateData)
 	lda GameStateData+0
@@ -109,9 +109,10 @@ donemove:
 
 	// Copy Camera.XScroll into Tmp
 	_set16(Camera.XScroll, Tmp)
+	_set16(Camera.YScroll, Tmp1)
 
 	// Update scroll values for the next frame
-	ldx #Layout2_BG1.id
+	ldx #Layout3_BG1a.id
 
 	lda Tmp+0
 	jsr Layers.SetXPosLo
@@ -121,16 +122,15 @@ donemove:
 	lda Tmp+0
 	jsr Layers.SetFineScrollX
 
-	lda Camera.YScroll+0
+	lda Tmp1+0
 	jsr Layers.SetYPosLo
-	lda Camera.YScroll+1
+	lda Tmp1+1
 	jsr Layers.SetYPosHi
 
-	// divide Tmp by 2
-	_half16(Tmp)
+	lda Tmp1+0
+	jsr Layers.SetFineScrollY		// this sets both layers
 
-	// Update scroll values for the next frame
-	ldx #Layout2_BG0.id
+	ldx #Layout3_BG1b.id
 
 	lda Tmp+0
 	jsr Layers.SetXPosLo
@@ -140,16 +140,54 @@ donemove:
 	lda Tmp+0
 	jsr Layers.SetFineScrollX
 
-	lda Camera.YScroll+0
+	lda Tmp1+0
 	jsr Layers.SetYPosLo
-	lda Camera.YScroll+1
+	lda Tmp1+1
+	jsr Layers.SetYPosHi
+
+	// divide Tmp and Tmp1 by 2
+	_half16(Tmp)
+	_half16(Tmp1)
+
+	// Update scroll values for the next frame
+	ldx #Layout3_BG0a.id
+
+	lda Tmp+0
+	jsr Layers.SetXPosLo
+	lda Tmp+1
+	jsr Layers.SetXPosHi
+
+	lda Tmp+0
+	jsr Layers.SetFineScrollX
+
+	lda Tmp1+0
+	jsr Layers.SetYPosLo
+	lda Tmp1+1
+	jsr Layers.SetYPosHi
+
+	lda Tmp1+0
+	jsr Layers.SetFineScrollY		// this sets both layers
+
+	ldx #Layout3_BG0b.id
+
+	lda Tmp+0
+	jsr Layers.SetXPosLo
+	lda Tmp+1
+	jsr Layers.SetXPosHi
+
+	lda Tmp+0
+	jsr Layers.SetFineScrollX
+
+	lda Tmp1+0
+	jsr Layers.SetYPosLo
+	lda Tmp1+1
 	jsr Layers.SetYPosHi
 
 	lda DPadClick
 	and #$10
 	beq _not_fire
 
-	lda #GStateCredits
+	lda #GStateTitles
 	sta RequestGameState
 
 _not_fire:
@@ -159,7 +197,7 @@ _not_fire:
 
 // ------------------------------------------------------------
 //
-gsDrwPlay: 
+gsDrwCredits: 
 {
 	_set8im($0f, DrawPal)
 
@@ -170,10 +208,10 @@ gsDrwPlay:
 
 // ------------------------------------------------------------
 //
-RenderLayout2BG0: 
+RenderLayout3BG0a: 
 {
 	// 
-	ldx #Layout2_BG0.id
+	ldx #Layout3_BG0a.id
 	ldy #<BgMap1
 	ldz #>BgMap1
 	jsr Layers.UpdateData.UpdateLayer
@@ -183,10 +221,23 @@ RenderLayout2BG0:
 
 // ------------------------------------------------------------
 //
-RenderLayout2BG1: 
+RenderLayout3BG0b: 
 {
 	// 
-	ldx #Layout2_BG1.id
+	ldx #Layout3_BG0b.id
+	ldy #<BgMap1b
+	ldz #>BgMap1b
+	jsr Layers.UpdateData.UpdateLayer
+
+	rts	
+}
+
+// ------------------------------------------------------------
+//
+RenderLayout3BG1a: 
+{
+	// 
+	ldx #Layout3_BG1a.id
 	ldy #<BgMap2
 	ldz #>BgMap2
 	jsr Layers.UpdateData.UpdateLayer
@@ -196,146 +247,18 @@ RenderLayout2BG1:
 
 // ------------------------------------------------------------
 //
-UpdateObjData:
+RenderLayout3BG1b: 
 {
-	// Add Objs into the work ram here
-	//
-	ldx #$00
-!:
-	clc
-	lda Objs1PosXLo,x
-	adc Objs1VelXLo,x
-	sta Objs1PosXLo,x
-	lda Objs1PosXHi,x
-	adc Objs1VelXHi,x
-	and #$01
-	sta Objs1PosXHi,x
+	// 
+	ldx #Layout3_BG1b.id
+	ldy #<BgMap2b
+	ldz #>BgMap2b
+	jsr Layers.UpdateData.UpdateLayer
 
-	clc
-	lda Objs1PosYLo,x
-	adc Objs1VelY,x
-	sta Objs1PosYLo,x
-
-	inx
-	cpx #NUM_OBJS1
-	bne !-
-
-	rts
+	rts	
 }
 
-// ------------------------------------------------------------
-//
-DrawObjData:
-{
-	lda #$00
-	sta DrawPosY+1
 
-	_set16im((sprFont.baseChar), DrawBaseChr)			// Start charIndx with first pixie char
-
-	// Add Objs into the work ram here
-	//
-	ldx #$00
-!:
-	lda Objs1PosYLo,x
-	sta DrawPosY+0
-
-	sec
-	lda Objs1PosXLo,x
-	sbc #$20
-	sta DrawPosX+0
-	lda Objs1PosXHi,x
-	sbc #$00
-	sta DrawPosX+1
-
-	lda Objs1Spr,x
-	sta DrawSChr
-
-	jsr DrawPixie
-
-	inx
-	cpx #NUM_OBJS1
-	bne !-
-
-	rts
-}
-
-// ------------------------------------------------------------
-//
-InitObjData:
-{
-    .var xpos = Tmp       // 16bit
-    .var ypos = Tmp+2     // 8bit
-
-	// Init Obj group 1
-	//
-	//
-	_set16im(0, xpos)
-	_set8im(0, ypos)
-
-	ldx #$00
-iloop1:
-	lda xpos
-	sta Objs1PosXLo,x
-	lda xpos+1
-	sta Objs1PosXHi,x
-	lda ypos
-	sta Objs1PosYLo,x
-	lda #1
-	sta Objs1VelY,x
-
-	txa
-	and #$01
-	clc
-	adc #$1e
-	asl
-	sta Objs1Spr,x
-
-	txa
-	and #$01
-	bne ip1
-	lda #$ff
-	sta Objs1VelXLo,x
-	sta Objs1VelXHi,x
-	bra id1
-ip1:
-	lda #$01
-	sta Objs1VelXLo,x
-	lda #$00
-	sta Objs1VelXHi,x
-id1:
-
-	_add16im(xpos, -14, xpos)
-	_and16im(xpos, $1ff, xpos)
-	_add8im(ypos, 5, ypos)
-
-	inx
-	cpx #NUM_OBJS1
-	bne iloop1
-
-	rts
-}
-
-// ---
-.segment Data "GameState Play"
-
-// ------------------------------------------------------------
-//
-.segment BSS "Obj Data"
-
-Objs1PosXLo:
-	.fill NUM_OBJS1, 0
-Objs1PosXHi:
-	.fill NUM_OBJS1, 0
-Objs1PosYLo:
-	.fill NUM_OBJS1, 0
-Objs1VelXLo:
-	.fill NUM_OBJS1, 0
-Objs1VelXHi:
-	.fill NUM_OBJS1, 0
-Objs1VelY:
-	.fill NUM_OBJS1, 0
-Objs1Spr:
-	.fill NUM_OBJS1, 0
 
 
 

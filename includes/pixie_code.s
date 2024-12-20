@@ -8,6 +8,8 @@ DrawBaseChr:    .byte $00,$00
 DrawPal:        .byte $00
 DrawSChr:		.byte $00
 
+PixieYShift:	.byte $00
+
 // ------------------------------------------------------------
 //
 .segment Code "Pixie Code"
@@ -18,6 +20,9 @@ ClearWorkPixies: {
 	.var rowScreenPtr = Tmp		// 16bit
 	.var rowAttribPtr = Tmp+2	// 16bit
 
+	lda #$00
+	sta PixieYShift
+	
 	_set16im(PixieWorkTiles, rowScreenPtr)
 	_set16im(PixieWorkAttrib, rowAttribPtr)
 
@@ -97,7 +102,7 @@ DrawPixie:
 	adc #$00
 	sta charIndx+1
 
-	lda Camera.YScroll+0
+	lda PixieYShift
 	and #$07
 	sta lshift
 	

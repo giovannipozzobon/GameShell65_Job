@@ -64,7 +64,7 @@ SetYPosHi:
 // ------------------------------------------------------------
 // X = Layer Id
 // A = Fine scroll value
-SetFineScroll: 
+SetFineScrollX: 
 {
 	and #$0f
 	sta ul2xscroll
@@ -79,6 +79,25 @@ SetFineScroll:
 
 	lda #$01
 	sta ScrollUpdate,x
+
+	rts
+}
+
+SetFineScrollY:
+{
+	// Parallax layer a & b
+	and #$07
+	tay
+	lda shiftOffsets1,y
+	sta YShift,x
+	lda shiftMasks,y
+	sta YMask,x
+	inx
+	eor #$ff
+	sta YMask,x
+	lda shiftOffsets2,y
+	sta YShift,x
+	dex
 
 	rts
 }
@@ -100,14 +119,8 @@ UpdateScrollPositions:
 	lda #$00
 	sta Layers.ScrollUpdate,x
 
-	// setup the scroll position
-	lda Layers.FineScrollXLo,x
-	sta xposLo
-	lda Layers.FineScrollXHi,x
-	and #$03
-	sta xposHi
-
 	lda Layers.Trans,x
+	ora #$08				// Add rowmask flag
 	sta transFlag
 
 	// setup the gotox offset
@@ -127,14 +140,15 @@ UpdateScrollPositions:
 !loop:
 		// Set GotoX position
 		ldz #0
-		lda xposLo:#$00
+		lda Layers.FineScrollXLo,x
 		sta ((tile_ptr)), z
 		lda transFlag:#$10
 		sta ((attrib_ptr)),z
 		inz
-		lda xposHi:#$00
+		lda YShift,x
+		ora Layers.FineScrollXHi,x
 		sta ((tile_ptr)), z
-		lda #$00
+		lda YMask,x
 		sta ((attrib_ptr)),z
 
 	    _add16(tile_ptr, Layout.LogicalRowSize, tile_ptr)
@@ -523,6 +537,14 @@ ChrOffsLo:		.fill LayerList.size(), <LayerList.get(i).ChrOffs
 ChrOffsHi:		.fill LayerList.size(), >LayerList.get(i).ChrOffs
 ChrSizeLo:		.fill LayerList.size(), <LayerList.get(i).ChrSize
 ChrSizeHi:		.fill LayerList.size(), >LayerList.get(i).ChrSize
+
+.segment Data "Layer Data YScroll"
+YShift:			.fill LayerList.size(), $00
+YMask:			.fill LayerList.size(), $ff
+
+shiftMasks: .byte %11111111,%01111111,%00111111,%00011111,%00001111,%00000111,%00000011,%00000001,%00000000
+shiftOffsets1: .byte (0<<5),(1<<5),(2<<5),(3<<5),(4<<5),(5<<5),(6<<5),(7<<5)
+shiftOffsets2: .byte (0<<5),(7<<5)|$10,(6<<5)|$10,(5<<5)|$10,(4<<5)|$10,(3<<5)|$10,(2<<5)|$10,(1<<5)|$10
 
 .segment BSS "Layer BSS"
 

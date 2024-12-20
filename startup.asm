@@ -3,7 +3,7 @@
 //
 .file [name="startup.prg", type="bin", segments="Code,Data"]
 
-//#define USE_DBG
+#define USE_DBG
 
 // ------------------------------------------------------------
 // Memory layout
@@ -21,7 +21,7 @@
 // Defines to describe the screen size
 //
 .const SCREEN_WIDTH = 320
-.const SCREEN_HEIGHT = 128
+.const SCREEN_HEIGHT = 208
 
 .const PLAY_SCREEN_WIDTH = 320+32
 .const PLAY_SCREEN_HEIGHT = 208
@@ -72,6 +72,8 @@
 // ------------------------------------------------------------
 // Layer layout for game screen example
 //
+// Dual horizontally parallaxing layers with pixies
+//
 // 1) BG0 layer for background
 // 1) BG1 layer for midground
 // 2) Pixie layer for you know, pixies
@@ -86,14 +88,37 @@
 .const Layout2end = EndLayout(Layout2)
 
 // ------------------------------------------------------------
+// Layer layout for credits screen example
+//
+// Dual vertically and horizontally parallaxing layers with pixies,
+// note that vertical parallax needs 2 layers per graphics layer!!!
+//
+// 1) BG0 layer for background
+// 1) BG0 layer for background
+// 1) BG1 layer for midground
+// 1) BG1 layer for midground
+// 2) Pixie layer for you know, pixies
+//
+// 3) Always end with EOL layer
+//
+.const Layout3 = NewLayout("play", PLAY_SCREEN_WIDTH, PLAY_SCREEN_HEIGHT, (PLAY_SCREEN_HEIGHT / 8))
+.const Layout3_BG0a = Layer_BG("bg_level0a", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout3_BG0b = Layer_BG("bg_level0b", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout3_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
+.const Layout3_BG1a = Layer_BG("bg_level1a", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout3_BG1b = Layer_BG("bg_level1b", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout3_EOL = Layer_EOL("eol")
+.const Layout3end = EndLayout(Layout3)
+
+// ------------------------------------------------------------
 // Static BG Map sizes, in this example we are expanding the tile / map
 // set into a static buffer, for a real game you'd want to be more fancy
 //
 .const BGROWSIZE = (512 / 16) * 2
-.const BGNUMROWS = (256 / 8)
+.const BGNUMROWS = (512 / 8)
 
 .const MAXXBOUNDS = 512 - SCREEN_WIDTH
-.const MAXYBOUNDS = 256 - SCREEN_HEIGHT
+.const MAXYBOUNDS = 512 - SCREEN_HEIGHT
 
 // ------------------------------------------------------------
 // Number of NCM palettes that we are using
@@ -167,10 +192,10 @@ DPadClick:			.byte $00
 
 // ------------------------------------------------------------
 //
-.enum {GStateTitles, GStatePlay}
-.var GSIniStateList = List().add(gsIniTitles, gsIniPlay)
-.var GSUpdStateList = List().add(gsUpdTitles, gsUpdPlay)
-.var GSDrwStateList = List().add(gsDrwTitles, gsDrwPlay)
+.enum {GStateTitles, GStatePlay, GStateCredits}
+.var GSIniStateList = List().add(gsIniTitles, gsIniPlay, gsIniCredits)
+.var GSUpdStateList = List().add(gsUpdTitles, gsUpdPlay, gsUpdCredits)
+.var GSDrwStateList = List().add(gsDrwTitles, gsDrwPlay, gsDrwCredits)
 
 // ------------------------------------------------------------
 //
@@ -478,9 +503,21 @@ BgMap1:
 .word 	BGROWSIZE
 .word	$0040
 
+BgMap1b:
+.dword 	BGMap0TileRAM + BGROWSIZE
+.dword 	BGMap0AttribRAM + BGROWSIZE
+.word 	BGROWSIZE
+.word	$0040
+
 BgMap2:
 .dword 	BGMap1TileRAM
 .dword 	BGMap1AttribRAM
+.word 	BGROWSIZE
+.word	$0040
+
+BgMap2b:
+.dword 	BGMap1TileRAM + BGROWSIZE
+.dword 	BGMap1AttribRAM + BGROWSIZE
 .word 	BGROWSIZE
 .word	$0040
 
@@ -703,6 +740,7 @@ InitPalette: {
 #import "pixieText.s"
 #import "gsTitles.s"
 #import "gsPlay.s"
+#import "gsCredits.s"
 
 .segment Data "GameState Tables"
 GSIniStateTable:
