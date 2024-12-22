@@ -134,7 +134,7 @@ donemove:
 	lda Camera.YScroll+1
 	jsr Layers.SetYPosHi
 
-	lda DPadClick
+	lda System.DPadClick
 	and #$10
 	beq _not_fire
 
@@ -228,6 +228,7 @@ RenderLayout1BG: {
 	ldx #Layout1_BG.id
 	ldy #<BgMap1
 	ldz #>BgMap1
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	// Set the fine Y scroll by moving TextYPos up

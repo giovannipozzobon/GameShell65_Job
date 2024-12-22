@@ -215,6 +215,7 @@ UpdateData:
 	}
 
 	UpdateLayer: {
+		sta lineOffs
 		sty bgDesc+0
 		stz bgDesc+1
 
@@ -250,9 +251,12 @@ UpdateData:
 		// 
 		// This translates to $d778-A = (yScroll>>3) * mapLogicalWidth
 		//
+		clc
 		lda ScrollYLo,x
+		adc lineOffs:#$00
 		sta $d770					// mul A lsb
 		lda ScrollYHi,x
+		adc #$00
 		sta $d771					// mul A msb
 
 		lda (bgDesc),y

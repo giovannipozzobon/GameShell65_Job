@@ -1,6 +1,6 @@
 // ------------------------------------------------------------
 //
-.const NUM_OBJS1 = 256
+.const NUM_OBJS1 = 128
 
 .segment Zeropage "GameState Play"
 
@@ -145,7 +145,7 @@ donemove:
 	lda Camera.YScroll+1
 	jsr Layers.SetYPosHi
 
-	lda DPadClick
+	lda System.DPadClick
 	and #$10
 	beq _not_fire
 
@@ -176,6 +176,7 @@ RenderLayout2BG0:
 	ldx #Layout2_BG0.id
 	ldy #<BgMap1
 	ldz #>BgMap1
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	
@@ -189,6 +190,7 @@ RenderLayout2BG1:
 	ldx #Layout2_BG1.id
 	ldy #<BgMap2
 	ldz #>BgMap2
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	
@@ -304,9 +306,9 @@ ip1:
 	sta Objs1VelXHi,x
 id1:
 
-	_add16im(xpos, -14, xpos)
+	_add16im(xpos, -28, xpos)
 	_and16im(xpos, $1ff, xpos)
-	_add8im(ypos, 5, ypos)
+	_add8im(ypos, 10, ypos)
 
 	inx
 	cpx #NUM_OBJS1

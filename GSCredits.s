@@ -183,7 +183,7 @@ donemove:
 	lda Tmp1+1
 	jsr Layers.SetYPosHi
 
-	lda DPadClick
+	lda System.DPadClick
 	and #$10
 	beq _not_fire
 
@@ -214,6 +214,7 @@ RenderLayout3BG0a:
 	ldx #Layout3_BG0a.id
 	ldy #<BgMap1
 	ldz #>BgMap1
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	
@@ -225,8 +226,9 @@ RenderLayout3BG0b:
 {
 	// 
 	ldx #Layout3_BG0b.id
-	ldy #<BgMap1b
-	ldz #>BgMap1b
+	ldy #<BgMap1
+	ldz #>BgMap1
+	lda #$08							// layer b is offset by 8 pixels to read next row
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	
@@ -240,6 +242,7 @@ RenderLayout3BG1a:
 	ldx #Layout3_BG1a.id
 	ldy #<BgMap2
 	ldz #>BgMap2
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	
@@ -251,8 +254,9 @@ RenderLayout3BG1b:
 {
 	// 
 	ldx #Layout3_BG1b.id
-	ldy #<BgMap2b
-	ldz #>BgMap2b
+	ldy #<BgMap2
+	ldz #>BgMap2
+	lda #$08							// layer b is offset by 8 pixels to read next row
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	

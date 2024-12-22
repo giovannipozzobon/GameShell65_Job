@@ -334,6 +334,21 @@ done:
 
 // ------------------------------------------------------------
 //
+.segment Data "Pixie Clear Data"
+ClearPixieTile:
+	.for(var c = 0;c < NUM_PIXIEWORDS;c++) 
+	{
+		.byte <SCREEN_WIDTH,>SCREEN_WIDTH
+	}
+
+ClearPixieAttrib:
+	.for(var c = 0;c < NUM_PIXIEWORDS;c++) 
+	{
+		.byte $90,$00
+	}
+
+// ------------------------------------------------------------
+//
 .segment BSS "Pixie Work Lists"
 PixieRowScreenPtrLo:
 	.fill MAX_NUM_ROWS, $00
