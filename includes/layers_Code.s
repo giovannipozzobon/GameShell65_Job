@@ -184,26 +184,18 @@ UpdateData:
 	.var src_offset = Tmp3			// 16bit
 	.var src_stride = Tmp3+2		// 16bit
 
-	.var full_size = Tmp4			// 16bit
-	.var src_and = Tmp4+2			// 16bit
+	.var full_x_size = Tmp4			// 16bit
+	.var src_x_and = Tmp4+2			// 16bit
 
-	.var bgDesc = Tmp5				// 16bit
+	.var bgDesc = Tmp6				// 16bit
+	.var num_lines = Tmp6+2			// 8bit
 
 	OffsetTilePtr: {
 		// Calculate which row data to add this character to, we
 		// are using the MUL hardware here to avoid having a row table.
 		// 
-		// This translates to $d778-A = (ScrollY1>>3) * MAP_LOGICAL_SIZE
+		// This translates to $d778-A = (scroll_y in chars) * MAP_LOGICAL_SIZE
 		//
-		lda $d771
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		sta $d771
-
 		lda #$00
 		sta $d772
 		sta $d776
@@ -259,13 +251,26 @@ UpdateData:
 		adc #$00
 		sta $d771					// mul A msb
 
+		// divide mul A by 8 to get number of chars to shift by
+		lda $d771
+		lsr
+		ror $d770
+		lsr
+		ror $d770
+		lsr
+		ror $d770
+		sta $d771
+
+
 		lda (bgDesc),y
 		sta $d774					// mul B lsb
 		sta src_stride+0
+		sta copy_length+0
 		iny
 		lda (bgDesc),y
 		sta $d775					// mul B msb
 		sta src_stride+1
+		sta copy_length+1
 		iny
 
 		jsr OffsetTilePtr
@@ -275,23 +280,23 @@ UpdateData:
 		lda ChrOffsHi,x
 		sta dst_offset+1
 		lda ChrSizeLo,x
-		sta full_size+0
+		sta full_x_size+0
 		lda ChrSizeHi,x
-		sta full_size+1
+		sta full_x_size+1
 
 		lda ScrollXLo,x
 		sta src_offset+0
 		lda ScrollXHi,x
 		sta src_offset+1
 
-		lda (bgDesc),y
-		sta copy_length+0
-		iny
-		lda (bgDesc),y
-		sta copy_length+1
-		iny
+		// lda (bgDesc),y
+		// sta copy_length+0
+		// iny
+		// lda (bgDesc),y
+		// sta copy_length+1
+		// iny
 
-		_sub16im(copy_length, $0002, src_and)
+		_sub16im(copy_length, $0002, src_x_and)
 
 		jsr CopyScrollingLayerChunks
 
@@ -308,6 +313,8 @@ UpdateData:
 
 		_set16im(0, src_offset)
 		_set16im(Layout1_Pixie.DataSize, src_stride)
+
+		_set8(Layout.NumRows, num_lines)
 
 		jsr CopyLayerChunks
 
@@ -367,24 +374,26 @@ UpdateData:
 		lsr src_offset+1
 		ror src_offset+0
 
-		_and16(src_offset, src_and, src_offset)
+		_set8(Layout.NumRows, num_lines)
+
+		_and16(src_offset, src_x_and, src_offset)
 		_sub16(copy_length, src_offset, copy_length)
 
-		lda full_size+0
+		lda full_x_size+0
 		cmp copy_length+0
-		lda full_size+1
+		lda full_x_size+1
 		sbc copy_length+1
 		bcs !ee+
-		_set16(full_size, copy_length)
+		_set16(full_x_size, copy_length)
 !ee:
 
 		jsr CopyLayerChunks
 
 		// need to fix this with >255 byte wide maps?
-		lda full_size+0
+		lda full_x_size+0
 		cmp copy_length+0
 		bne !next+
-		lda full_size+1
+		lda full_x_size+1
 		cmp copy_length+1
 		beq !done+
 
@@ -392,7 +401,7 @@ UpdateData:
 		_add16(dst_offset, copy_length, dst_offset)
 		_set16im(0, src_offset)
 
-		_sub16(full_size, copy_length, copy_length)
+		_sub16(full_x_size, copy_length, copy_length)
 
 		jsr CopyLayerChunks
 
@@ -400,6 +409,8 @@ UpdateData:
 		rts
 	}
 
+	// Copy a column of tile/attrib data to target buffers
+	//
 	CopyLayerChunks: 
 	{
 		_set16(copy_length, tileLength)
@@ -410,12 +421,22 @@ UpdateData:
 		sta tileSourceBank
 		lda #SCREEN_RAM>>20
 		sta tileDestBank
+		lda src_tile_ptr+2
+		sta tileSource+2
+		lda #[SCREEN_RAM >> 16]
+		and #$0f
+		sta tileDest+2
 
 		// Attribs are copied from Bank 0 to (COLOR_RAM>>20)
 		lda #$00
 		sta attribSourceBank
 		lda #COLOR_RAM>>20
 		sta attribDestBank
+		lda src_attrib_ptr+2
+		sta attribSource+2
+		lda #[COLOR_RAM >> 16]
+		and #$0f
+		sta attribDest+2
 
 		// DMA tile rows
 		//
@@ -426,8 +447,6 @@ UpdateData:
 		lda src_tile_ptr+1
 		adc src_offset+1
 		sta tileSource+1
-		lda src_tile_ptr+2
-		sta tileSource+2
 
 		clc
 		lda #<SCREEN_RAM
@@ -436,9 +455,6 @@ UpdateData:
 		lda #>SCREEN_RAM
 		adc dst_offset+1
 		sta tileDest+1
-		lda #[SCREEN_RAM >> 16]
-		and #$0f
-		sta tileDest+2
 
 		ldx #$00
 	!tloop:
@@ -448,7 +464,7 @@ UpdateData:
 		_add16(tileDest, Layout.LogicalRowSize, tileDest)
 
 		inx
-		cpx Layout.NumRows
+		cpx num_lines
 		bne !tloop-
 
 		// DMA attribute rows
@@ -460,8 +476,6 @@ UpdateData:
 		lda src_attrib_ptr+1
 		adc src_offset+1
 		sta attribSource+1
-		lda src_attrib_ptr+2
-		sta attribSource+2
 
 		clc
 		lda #<COLOR_RAM
@@ -470,9 +484,6 @@ UpdateData:
 		lda #>COLOR_RAM
 		adc dst_offset+1
 		sta attribDest+1
-		lda #[COLOR_RAM >> 16]
-		and #$0f
-		sta attribDest+2
 
 		ldx #$00
 	!aloop:
@@ -482,7 +493,7 @@ UpdateData:
 		_add16(attribDest, Layout.LogicalRowSize, attribDest)
 
 		inx
-		cpx Layout.NumRows
+		cpx num_lines
 		bne !aloop-
 
 		rts 

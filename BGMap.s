@@ -3,16 +3,16 @@
 .segment Code "BGMap"
 
 BgMap1:
-.dword 	BGMap0TileRAM
-.dword 	BGMap0AttribRAM
-.word 	BGROWSIZE
-.word	$0040
+.dword 	BGMap0TileRAM       // 32bit pointer to decompressed tile ram
+.dword 	BGMap0AttribRAM     // 32bit pointer to decompressed attrib ram
+.word 	BGROWSIZE           // 16bit size of bytes per line
+.word	$0040               // 16bit number of 8 pixel height chars to wrap on
 
 BgMap2:
-.dword 	BGMap1TileRAM
-.dword 	BGMap1AttribRAM
-.word 	BGROWSIZE
-.word	$0040
+.dword 	BGMap1TileRAM       // 32bit pointer to decompressed tile ram
+.dword 	BGMap1AttribRAM     // 32bit pointer to decompressed attrib ram
+.word 	BGROWSIZE           // 16bit size of bytes per line
+.word	$0040               // 16bit number of 8 pixel height chars to wrap on
 
 // ------------------------------------------------------------
 //

@@ -182,8 +182,8 @@ isPal:
 	and #%00100000
 	beq !+
 
-	_add16im(TopBorder, 3, TopBorder)
-	_add16im(BotBorder, 3, BotBorder)
+	_sub16im(TextYPos, 4, TextYPos)
+	_sub16im(BotBorder, 1, BotBorder)
 
 !:
 

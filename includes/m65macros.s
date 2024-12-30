@@ -102,6 +102,13 @@ start:
 	sta dst
 }
 
+// _set8 - store an 8bit value to a memory location
+.macro _set8(value, dst)
+{
+	lda value
+	sta dst
+}
+
 // _add8im - add a 8bit constant to a memory location, store in result
 .macro _add8im(src, value, dst)
 {

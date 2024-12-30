@@ -32,7 +32,7 @@
 .const SCREEN_WIDTH = 320
 .const SCREEN_HEIGHT = 208
 
-.const PLAY_SCREEN_WIDTH = 320+32
+.const PLAY_SCREEN_WIDTH = 320
 .const PLAY_SCREEN_HEIGHT = 208
 
 // ------------------------------------------------------------
@@ -49,7 +49,7 @@
 
 // Maximum number of Pixie words use per row, 1 pixie is 2 words (GOTOX + CHAR)
 //
-.const NUM_PIXIES = 64						// Must be < 256
+.const NUM_PIXIES = 48						// Must be < 256
 .const NUM_PIXIEWORDS = NUM_PIXIES * 2
 
 // ------------------------------------------------------------
@@ -101,9 +101,11 @@
 .const Layout3 = NewLayout("credits", PLAY_SCREEN_WIDTH, PLAY_SCREEN_HEIGHT, (PLAY_SCREEN_HEIGHT / 8))
 .const Layout3_BG0a = Layer_BG("bg_level0a", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout3_BG0b = Layer_BG("bg_level0b", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
-.const Layout3_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
 .const Layout3_BG1a = Layer_BG("bg_level1a", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout3_BG1b = Layer_BG("bg_level1b", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout3_Pixie = Layer_PIXIE("pixie", NUM_PIXIEWORDS, 1)
+.const Layout3_BG2a = Layer_BG("bg_level2a", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
+.const Layout3_BG2b = Layer_BG("bg_level2b", (PLAY_SCREEN_WIDTH/16) + 1, true, 1)
 .const Layout3_EOL = Layer_EOL("eol")
 .const Layout3end = EndLayout(Layout3)
 

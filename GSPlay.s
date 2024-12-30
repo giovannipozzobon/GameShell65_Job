@@ -1,6 +1,6 @@
 // ------------------------------------------------------------
 //
-.const NUM_OBJS1 = 128
+.const NUM_OBJS1 = 256
 
 .segment Zeropage "GameState Play"
 
@@ -276,7 +276,7 @@ InitObjData:
 
 	ldx #$00
 iloop1:
-	lda xpos
+	lda xpos+0
 	sta Objs1PosXLo,x
 	lda xpos+1
 	sta Objs1PosXHi,x
@@ -338,6 +338,7 @@ Objs1VelY:
 	.fill NUM_OBJS1, 0
 Objs1Spr:
 	.fill NUM_OBJS1, 0
+
 
 
 

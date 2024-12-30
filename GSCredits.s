@@ -39,6 +39,8 @@ gsIniCredits: {
 	Layer_SetRenderFunc(Layout3_BG1a.id, RenderLayout3BG1a)
 	Layer_SetRenderFunc(Layout3_BG1b.id, RenderLayout3BG1b)
 	Layer_SetRenderFunc(Layout3_Pixie.id, Layers.UpdateData.UpdatePixie)
+	Layer_SetRenderFunc(Layout3_BG2a.id, RenderLayout3BG2a)
+	Layer_SetRenderFunc(Layout3_BG2b.id, RenderLayout3BG2b)
 	Layer_SetRenderFunc(Layout3_EOL.id, RenderNop)
 
 	_set16(Layout.LayoutWidth, Tmp)
@@ -78,7 +80,7 @@ gsUpdCredits: {
 	lbne donemove
 
 	_add16(Camera.XScroll, Camera.CamVelX, Camera.XScroll)
-	_and16im(Camera.XScroll, $1ff, Camera.XScroll)
+	_and16im(Camera.XScroll, $7ff, Camera.XScroll)
 	_add16(Camera.YScroll, Camera.CamVelY, Camera.YScroll)
 
 	// Min Y bounds
@@ -112,76 +114,121 @@ donemove:
 	_set16(Camera.YScroll, Tmp1)
 
 	// Update scroll values for the next frame
-	ldx #Layout3_BG1a.id
+	{
+		ldx #Layout3_BG2a.id
 
-	lda Tmp+0
-	jsr Layers.SetXPosLo
-	lda Tmp+1
-	jsr Layers.SetXPosHi
+		lda Tmp+0
+		jsr Layers.SetXPosLo
+		lda Tmp+1
+		jsr Layers.SetXPosHi
 
-	lda Tmp+0
-	jsr Layers.SetFineScrollX
+		lda Tmp+0
+		jsr Layers.SetFineScrollX
 
-	lda Tmp1+0
-	jsr Layers.SetYPosLo
-	lda Tmp1+1
-	jsr Layers.SetYPosHi
+		lda Tmp1+0
+		jsr Layers.SetYPosLo
+		lda Tmp1+1
+		jsr Layers.SetYPosHi
 
-	lda Tmp1+0
-	jsr Layers.SetFineScrollY		// this sets both layers
+		lda Tmp1+0
+		jsr Layers.SetFineScrollY		// this sets both layers
 
-	ldx #Layout3_BG1b.id
+		ldx #Layout3_BG2b.id
 
-	lda Tmp+0
-	jsr Layers.SetXPosLo
-	lda Tmp+1
-	jsr Layers.SetXPosHi
+		lda Tmp+0
+		jsr Layers.SetXPosLo
+		lda Tmp+1
+		jsr Layers.SetXPosHi
 
-	lda Tmp+0
-	jsr Layers.SetFineScrollX
+		lda Tmp+0
+		jsr Layers.SetFineScrollX
 
-	lda Tmp1+0
-	jsr Layers.SetYPosLo
-	lda Tmp1+1
-	jsr Layers.SetYPosHi
+		lda Tmp1+0
+		jsr Layers.SetYPosLo
+		lda Tmp1+1
+		jsr Layers.SetYPosHi
+
+	}
 
 	// divide Tmp and Tmp1 by 2
 	_half16(Tmp)
 	_half16(Tmp1)
 
-	// Update scroll values for the next frame
-	ldx #Layout3_BG0a.id
+	{
+		ldx #Layout3_BG1a.id
 
-	lda Tmp+0
-	jsr Layers.SetXPosLo
-	lda Tmp+1
-	jsr Layers.SetXPosHi
+		lda Tmp+0
+		jsr Layers.SetXPosLo
+		lda Tmp+1
+		jsr Layers.SetXPosHi
 
-	lda Tmp+0
-	jsr Layers.SetFineScrollX
+		lda Tmp+0
+		jsr Layers.SetFineScrollX
 
-	lda Tmp1+0
-	jsr Layers.SetYPosLo
-	lda Tmp1+1
-	jsr Layers.SetYPosHi
+		lda Tmp1+0
+		jsr Layers.SetYPosLo
+		lda Tmp1+1
+		jsr Layers.SetYPosHi
 
-	lda Tmp1+0
-	jsr Layers.SetFineScrollY		// this sets both layers
+		lda Tmp1+0
+		jsr Layers.SetFineScrollY		// this sets both layers
 
-	ldx #Layout3_BG0b.id
+		ldx #Layout3_BG1b.id
 
-	lda Tmp+0
-	jsr Layers.SetXPosLo
-	lda Tmp+1
-	jsr Layers.SetXPosHi
+		lda Tmp+0
+		jsr Layers.SetXPosLo
+		lda Tmp+1
+		jsr Layers.SetXPosHi
 
-	lda Tmp+0
-	jsr Layers.SetFineScrollX
+		lda Tmp+0
+		jsr Layers.SetFineScrollX
 
-	lda Tmp1+0
-	jsr Layers.SetYPosLo
-	lda Tmp1+1
-	jsr Layers.SetYPosHi
+		lda Tmp1+0
+		jsr Layers.SetYPosLo
+		lda Tmp1+1
+		jsr Layers.SetYPosHi
+
+	}
+
+	// divide Tmp and Tmp1 by 2
+	_half16(Tmp)
+	_half16(Tmp1)
+
+	{
+		// Update scroll values for the next frame
+		ldx #Layout3_BG0a.id
+
+		lda Tmp+0
+		jsr Layers.SetXPosLo
+		lda Tmp+1
+		jsr Layers.SetXPosHi
+
+		lda Tmp+0
+		jsr Layers.SetFineScrollX
+
+		lda Tmp1+0
+		jsr Layers.SetYPosLo
+		lda Tmp1+1
+		jsr Layers.SetYPosHi
+
+		lda Tmp1+0
+		jsr Layers.SetFineScrollY		// this sets both layers
+
+		ldx #Layout3_BG0b.id
+
+		lda Tmp+0
+		jsr Layers.SetXPosLo
+		lda Tmp+1
+		jsr Layers.SetXPosHi
+
+		lda Tmp+0
+		jsr Layers.SetFineScrollX
+
+		lda Tmp1+0
+		jsr Layers.SetYPosLo
+		lda Tmp1+1
+		jsr Layers.SetYPosHi
+	}
 
 	lda System.DPadClick
 	and #$10
@@ -262,6 +309,33 @@ RenderLayout3BG1b:
 	rts	
 }
 
+// ------------------------------------------------------------
+//
+RenderLayout3BG2a: 
+{
+	// 
+	ldx #Layout3_BG2a.id
+	ldy #<BgMap2
+	ldz #>BgMap2
+	lda #$00
+	jsr Layers.UpdateData.UpdateLayer
+
+	rts	
+}
+
+// ------------------------------------------------------------
+//
+RenderLayout3BG2b: 
+{
+	// 
+	ldx #Layout3_BG2b.id
+	ldy #<BgMap2
+	ldz #>BgMap2
+	lda #$08							// layer b is offset by 8 pixels to read next row
+	jsr Layers.UpdateData.UpdateLayer
+
+	rts	
+}
 
 
 
