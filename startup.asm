@@ -113,8 +113,11 @@
 // Static BG Map sizes, in this example we are expanding the tile / map
 // set into a static buffer, for a real game you'd want to be more fancy
 //
-.const BGROWSIZE = (512 / 16) * 2
-.const BGNUMROWS = (512 / 8)
+.const BG0ROWSIZE = (256 / 16) * 2
+.const BG0NUMROWS = (256 / 8)
+
+.const BG1ROWSIZE = (512 / 16) * 2
+.const BG1NUMROWS = (512 / 8)
 
 .const MAXXBOUNDS = 512 - SCREEN_WIDTH
 .const MAXYBOUNDS = 512 - SCREEN_HEIGHT

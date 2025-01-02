@@ -5,13 +5,13 @@
 BgMap1:
 .dword 	BGMap0TileRAM       // 32bit pointer to decompressed tile ram
 .dword 	BGMap0AttribRAM     // 32bit pointer to decompressed attrib ram
-.word 	BGROWSIZE           // 16bit size of bytes per line
-.word	$0040               // 16bit number of 8 pixel height chars to wrap on
+.word 	BG0ROWSIZE          // 16bit size of bytes per line
+.word	$0020               // 16bit number of 8 pixel height chars to wrap on
 
 BgMap2:
 .dword 	BGMap1TileRAM       // 32bit pointer to decompressed tile ram
 .dword 	BGMap1AttribRAM     // 32bit pointer to decompressed attrib ram
-.word 	BGROWSIZE           // 16bit size of bytes per line
+.word 	BG1ROWSIZE          // 16bit size of bytes per line
 .word	$0040               // 16bit number of 8 pixel height chars to wrap on
 
 // ------------------------------------------------------------
@@ -30,47 +30,30 @@ InitBGMap:
 	.var palIndx = Tmp5					// 8bit
 	.var line_delta = Tmp5+2			// 16bit
 	.var tile_map = Tmp6				// 16bit
+    .var num_lines = Tmp6+2             // 8bit
 
-	lda #<[$3e]
-	sta offsWrapLo
-	lda #>[$3e]
-	sta offsWrapHi
-	lda #<[$40]
-	sta baseAddLo
-	lda #>[$40]
-	sta baseAddHi
-	lda #$20
-	sta colCount
-	_set16im(BGROWSIZE, line_delta)
-	_set16im(BGROWSIZE*2, line_stride)		// we fill the buffer 2 lines at a time
+	_set16im(BG0ROWSIZE, line_delta)        // number of bytes per row
+	_set16(line_delta, line_stride)		
+    _double16(line_stride)                  // we fill the buffer 2 lines at a time due to tile size of 16x16
 	_set16im(Bg0Tiles, tile_map)
 	_set16im((bg0Chars.addr/64), chr_offs)
     _set16im(Bg0Map, map_base)
-
-    _set32im(BGMap0TileRAM, chr_ptr)		// map is decompressed to this location
+    _set8im(BG0NUMROWS/2, num_lines)        // we process 2 lines at a time due to tile size of 16x16
+    _set32im(BGMap0TileRAM, chr_ptr)		// map is decompressed to these locations
     _set32im(BGMap0AttribRAM, attrib_ptr)
 
 	_set8im((PAL_BG0<<4) | $0f, palIndx)
 
     jsr InitMap
 
-	lda #<[$3e]
-	sta offsWrapLo
-	lda #>[$3e]
-	sta offsWrapHi
-	lda #<[$40]
-	sta baseAddLo
-	lda #>[$40]
-	sta baseAddHi
-	lda #$20
-	sta colCount
-	_set16im(BGROWSIZE, line_delta)
-	_set16im(BGROWSIZE*2, line_stride)		// we fill the buffer 2 lines at a time
+	_set16im(BG1ROWSIZE, line_delta)        // number of bytes per row
+	_set16(line_delta, line_stride)		
+    _double16(line_stride)                  // we fill the buffer 2 lines at a time
 	_set16im(Bg1Tiles, tile_map)
 	_set16im((bg1Chars.addr/64), chr_offs)
     _set16im(Bg1Map, map_base)
-
-    _set32im(BGMap1TileRAM, chr_ptr)		// map is decompressed to this location
+    _set8im(BG1NUMROWS/2, num_lines)        // we process 2 lines at a time due to tile size of 16x16
+    _set32im(BGMap1TileRAM, chr_ptr)		// map is decompressed to these locations
     _set32im(BGMap1AttribRAM, attrib_ptr)
 
 	_set8im((PAL_BG1<<4) | $0f, palIndx)
@@ -80,6 +63,24 @@ InitBGMap:
     rts
 
 InitMap:
+
+    lda line_delta+0
+    sta baseAddLo
+    lda line_delta+1
+    sta baseAddHi
+
+    sec
+    lda line_delta+0
+    sbc #$02
+    sta offsWrapLo
+    lda line_delta+1
+    sbc #$00
+    sta offsWrapHi
+
+    lda line_delta+0
+    lsr
+    sta colCount
+
     // y = line (0 - 5)
     ldy #0
 
@@ -142,12 +143,12 @@ _line_loop:
     clc
     lda (tiles_ptr),y
     adc chr_offs+0
-    sta ((chr_ptr)),z			// BGROWSIZE + 0
+    sta ((chr_ptr)),z			// line_delta + 0
     iny
     inz
     lda (tiles_ptr),y
     adc chr_offs+1
-    sta ((chr_ptr)),z			// BGROWSIZE + 1
+    sta ((chr_ptr)),z			// line_delta + 1
 	lda palIndx
 	sta ((attrib_ptr)),z
     iny
@@ -187,7 +188,7 @@ _line_loop:
     tay
 
     iny
-    cpy #BGNUMROWS/2
+    cpy num_lines
     lbne _row_loop
 
     rts
@@ -211,13 +212,13 @@ Bg1Tiles:
 //
 .segment MapRam "Map RAM 0"
 BGMap0TileRAM:
-	.fill (BGROWSIZE*BGNUMROWS), $00
+	.fill (BG0ROWSIZE*BG0NUMROWS), $00
 BGMap0AttribRAM:
-	.fill (BGROWSIZE*BGNUMROWS), $00
+	.fill (BG0ROWSIZE*BG0NUMROWS), $00
 
 .segment MapRam "Map RAM 1"
 BGMap1TileRAM:
-	.fill (BGROWSIZE*BGNUMROWS), $00
+	.fill (BG1ROWSIZE*BG1NUMROWS), $00
 BGMap1AttribRAM:
-	.fill (BGROWSIZE*BGNUMROWS), $00
+	.fill (BG1ROWSIZE*BG1NUMROWS), $00
 
