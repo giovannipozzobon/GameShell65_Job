@@ -14,6 +14,12 @@ BgMap2:
 .word 	BG1ROWSIZE          // 16bit size of bytes per line
 .word	$0040               // 16bit number of 8 pixel height chars to wrap on
 
+BgMap3:
+.dword 	BGMap2TileRAM       // 32bit pointer to decompressed tile ram
+.dword 	BGMap2AttribRAM     // 32bit pointer to decompressed attrib ram
+.word 	BG2ROWSIZE          // 16bit size of bytes per line
+.word	$0040               // 16bit number of 8 pixel height chars to wrap on
+
 // ------------------------------------------------------------
 //
 InitBGMap:
@@ -57,6 +63,20 @@ InitBGMap:
     _set32im(BGMap1AttribRAM, attrib_ptr)
 
 	_set8im((PAL_BG1<<4) | $0f, palIndx)
+
+    jsr InitMap
+
+	_set16im(BG2ROWSIZE, line_delta)        // number of bytes per row
+	_set16(line_delta, line_stride)		
+    _double16(line_stride)                  // we fill the buffer 2 lines at a time
+	_set16im(Bg2Tiles, tile_map)
+	_set16im((bg2Chars.addr/64), chr_offs)
+    _set16im(Bg2Map, map_base)
+    _set8im(BG2NUMROWS/2, num_lines)        // we process 2 lines at a time due to tile size of 16x16
+    _set32im(BGMap2TileRAM, chr_ptr)		// map is decompressed to these locations
+    _set32im(BGMap2AttribRAM, attrib_ptr)
+
+	_set8im((PAL_BG2<<4) | $0f, palIndx)
 
     jsr InitMap
 
@@ -201,12 +221,16 @@ Bg0Map:
 	.import binary "./sdcard/bg2_LV0L0_map.bin"
 Bg1Map:
 	.import binary "./sdcard/bg2_LV1L0_map.bin"
+Bg2Map:
+	.import binary "./sdcard/bg2_LV2L0_map.bin"
 
 .segment Data "Bg0 Tiles"
 Bg0Tiles:
 	.import binary "./sdcard/bg20_tiles.bin"
 Bg1Tiles:
 	.import binary "./sdcard/bg21_tiles.bin"
+Bg2Tiles:
+	.import binary "./sdcard/bg22_tiles.bin"
 
 // ------------------------------------------------------------
 //
@@ -221,4 +245,10 @@ BGMap1TileRAM:
 	.fill (BG1ROWSIZE*BG1NUMROWS), $00
 BGMap1AttribRAM:
 	.fill (BG1ROWSIZE*BG1NUMROWS), $00
+
+.segment MapRam "Map RAM 2"
+BGMap2TileRAM:
+	.fill (BG2ROWSIZE*BG2NUMROWS), $00
+BGMap2AttribRAM:
+	.fill (BG2ROWSIZE*BG2NUMROWS), $00
 

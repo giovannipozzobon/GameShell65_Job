@@ -119,6 +119,9 @@
 .const BG1ROWSIZE = (512 / 16) * 2
 .const BG1NUMROWS = (512 / 8)
 
+.const BG2ROWSIZE = (512 / 16) * 2
+.const BG2NUMROWS = (512 / 8)
+
 .const MAXXBOUNDS = 512 - SCREEN_WIDTH
 .const MAXYBOUNDS = 512 - SCREEN_HEIGHT
 
@@ -129,6 +132,7 @@
 	PAL_FONTHUD,
 	PAL_BG0,
 	PAL_BG1,
+	PAL_BG2,
 
 	NUM_PALETTES
 }
@@ -169,6 +173,7 @@ GameStateData:		.byte $00,$00,$00
 .const bgCharsBegin = SetAssetAddr(CHARS_RAM, $40000)
 .const bg0Chars = AddAsset("FS-C0", "sdcard/bg20_chr.bin")
 .const bg1Chars = AddAsset("FS-C1", "sdcard/bg21_chr.bin")
+.const bg2Chars = AddAsset("FS-C2", "sdcard/bg22_chr.bin")
 
 .const sprFont = AddAsset("FS-F0", "sdcard/font_chr.bin")
 
@@ -415,6 +420,7 @@ Palette:
 	.import binary "./sdcard/font_pal.bin"
 	.import binary "./sdcard/bg20_pal.bin"
 	.import binary "./sdcard/bg21_pal.bin"
+	.import binary "./sdcard/bg22_pal.bin"
 
 // ------------------------------------------------------------
 // Ensure these tables DONOT straddle a bank address

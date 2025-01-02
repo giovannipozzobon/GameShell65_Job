@@ -316,8 +316,8 @@ RenderLayout3BG2a:
 {
 	// 
 	ldx #Layout3_BG2a.id
-	ldy #<BgMap2
-	ldz #>BgMap2
+	ldy #<BgMap3
+	ldz #>BgMap3
 	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
@@ -330,8 +330,8 @@ RenderLayout3BG2b:
 {
 	// 
 	ldx #Layout3_BG2b.id
-	ldy #<BgMap2
-	ldz #>BgMap2
+	ldy #<BgMap3
+	ldz #>BgMap3
 	lda #$08							// layer b is offset by 8 pixels to read next row
 	jsr Layers.UpdateData.UpdateLayer
 
