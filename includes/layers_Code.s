@@ -175,133 +175,26 @@ UpdateScrollPositions:
 //
 UpdateData: 
 {
-	.var src_tile_ptr = Tmp			// 32bit
-	.var src_attrib_ptr = Tmp1		// 32bit
+	.var src_tile_ptr = Tmp			// 32bit o
+	.var src_attrib_ptr = Tmp1		// 32bit o
 
-	.var dst_offset = Tmp2			// 16bit
-	.var copy_length = Tmp2+2		// 16bit
+	.var src_x_size = Tmp2			// 16bit
+	.var src_y_size = Tmp2+2		// 16bit
 
-	.var src_offset = Tmp3			// 16bit
-	.var src_stride = Tmp3+2		// 16bit
+	.var bgDesc = Tmp3				// 16bit
+	.var dst_offset = Tmp3+2		// 16bit
 
-	.var full_x_size = Tmp4			// 16bit
-	.var src_x_and = Tmp4+2			// 16bit
+	.var src_x_offset = Tmp4		// 16bit
+	.var src_y_offset = Tmp4+2		// 16bit
 
-	.var bgDesc = Tmp6				// 16bit
-	.var num_lines = Tmp6+2			// 8bit
+	.var copy_width = Tmp5			// 16bit
+	.var copy_height = Tmp5+2		// 16bit
 
-	OffsetTilePtr: {
-		// Calculate which row data to add this character to, we
-		// are using the MUL hardware here to avoid having a row table.
-		// 
-		// This translates to $d778-A = (scroll_y in chars) * MAP_LOGICAL_SIZE
-		//
-		lda #$00
-		sta $d772
-		sta $d776
+	.var dst_x_size = Tmp6			// 16bit
+	.var src_x_and = Tmp6+2			// 16bit
 
-		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to tile ptrs
-		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
-
-		rts
-	}
-
-	UpdateLayer: {
-		sta lineOffs
-		sty bgDesc+0
-		stz bgDesc+1
-
-		ldy #$00
-		lda (bgDesc),y
-		sta src_tile_ptr+0
-		iny
-		lda (bgDesc),y
-		sta src_tile_ptr+1
-		iny
-		lda (bgDesc),y
-		sta src_tile_ptr+2
-		iny
-		lda (bgDesc),y
-		sta src_tile_ptr+3
-		iny
-
-		lda (bgDesc),y
-		sta src_attrib_ptr+0
-		iny
-		lda (bgDesc),y
-		sta src_attrib_ptr+1
-		iny
-		lda (bgDesc),y
-		sta src_attrib_ptr+2
-		iny
-		lda (bgDesc),y
-		sta src_attrib_ptr+3
-		iny
-
-		// Calculate which row data to add this character to, we
-		// are using the MUL hardware here to avoid having a row table.
-		// 
-		// This translates to $d778-A = (yScroll>>3) * mapLogicalWidth
-		//
-		clc
-		lda ScrollYLo,x
-		adc lineOffs:#$00
-		sta $d770					// mul A lsb
-		lda ScrollYHi,x
-		adc #$00
-		sta $d771					// mul A msb
-
-		// divide mul A by 8 to get number of chars to shift by
-		lda $d771
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		sta $d771
-
-
-		lda (bgDesc),y
-		sta $d774					// mul B lsb
-		sta src_stride+0
-		sta copy_length+0
-		iny
-		lda (bgDesc),y
-		sta $d775					// mul B msb
-		sta src_stride+1
-		sta copy_length+1
-		iny
-
-		jsr OffsetTilePtr
-
-		lda ChrOffsLo,x
-		sta dst_offset+0
-		lda ChrOffsHi,x
-		sta dst_offset+1
-		lda ChrSizeLo,x
-		sta full_x_size+0
-		lda ChrSizeHi,x
-		sta full_x_size+1
-
-		lda ScrollXLo,x
-		sta src_offset+0
-		lda ScrollXHi,x
-		sta src_offset+1
-
-		// lda (bgDesc),y
-		// sta copy_length+0
-		// iny
-		// lda (bgDesc),y
-		// sta copy_length+1
-		// iny
-
-		_sub16im(copy_length, $0002, src_x_and)
-
-		jsr CopyScrollingLayerChunks
-
-		rts
-	}
+	.var dst_y_size = Tmp7			// 16bit
+	.var src_y_and = Tmp7+2			// 16bit
 
 	UpdatePixie: 
 	{
@@ -309,12 +202,13 @@ UpdateData:
 		_set32im(PixieWorkAttrib, src_attrib_ptr)
 
 		_set16(Layout.PixieGotoOffs, dst_offset)
-		_set16im(Layout1_Pixie.DataSize, copy_length)
+		_set16im(0, src_x_offset)
+		_set16im(0, src_y_offset)
 
-		_set16im(0, src_offset)
-		_set16im(Layout1_Pixie.DataSize, src_stride)
+		_set16im(Layout1_Pixie.DataSize, src_x_size)
 
-		_set8(Layout.NumRows, num_lines)
+		_set16(src_x_size, copy_width)
+		_set8(Layout.NumRows, copy_height)
 
 		jsr CopyLayerChunks
 
@@ -365,43 +259,191 @@ UpdateData:
 		rts
 	}
 
+	UpdateLayer: {
+		sta lineOffs
+		sty bgDesc+0
+		stz bgDesc+1
+
+		ldy #$00
+		lda (bgDesc),y				// map data - tile data pointer
+		sta src_tile_ptr+0
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+1
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+2
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+3
+		iny
+
+		lda (bgDesc),y				// map data - attrib data pointer
+		sta src_attrib_ptr+0
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+1
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+2
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+3
+		iny
+
+		lda (bgDesc),y				// map data - number of bytes wide
+		sta src_x_size+0
+		iny
+		lda (bgDesc),y
+		sta src_x_size+1
+		iny
+
+		lda (bgDesc),y				// map data - number of char lines high (pixels / 8)
+		sta src_y_size+0
+		iny
+		lda (bgDesc),y
+		sta src_y_size+1
+		iny
+
+		_sub16im(src_x_size, $0002, src_x_and)
+		_sub16im(src_y_size, $0001, src_y_and)
+
+		lda Layout.NumRows
+		sta dst_y_size+0
+		lda #$00
+		sta dst_y_size+1
+
+		// Calculate which row data to add this character to, we
+		// are using the MUL hardware here to avoid having a row table.
+		// 
+		// This translates to $d778-A = (yScroll>>3) * mapLogicalWidth
+		//
+		clc
+		lda ScrollYLo,x
+		adc lineOffs:#$00
+		sta src_y_offset+0			// mul A lsb
+		lda ScrollYHi,x
+		adc #$00
+		sta src_y_offset+1			// mul A msb
+
+		// divide mul A by 8 to get number of chars to shift by
+		lsr src_y_offset+1
+		ror src_y_offset+0
+		lsr src_y_offset+1
+		ror src_y_offset+0
+		lsr src_y_offset+1
+		ror src_y_offset+0
+
+		_and16(src_y_offset, src_y_and, src_y_offset)
+
+		// 
+		_set16(src_y_size, copy_height)
+		_sub16(copy_height, src_y_offset, copy_height)
+
+		lda dst_y_size+0
+		cmp copy_height+0
+		lda dst_y_size+1
+		sbc copy_height+1
+		bcs !ee+
+		_set16(dst_y_size, copy_height)
+!ee:
+
+		lda ChrSizeLo,x
+		sta dst_x_size+0
+		lda ChrSizeHi,x
+		sta dst_x_size+1
+
+
+		// fetch the left column of the dest
+		lda ChrOffsLo,x
+		sta dst_offset+0
+		lda ChrOffsHi,x
+		sta dst_offset+1
+
+		lda dst_offset+0
+		pha
+		lda dst_offset+1
+		pha
+
+		jsr CopyScrollingLayerChunks
+
+		pla
+		sta dst_offset+1
+		pla	
+		sta dst_offset+0
+
+		// See how many more lines to copy
+		lda dst_y_size+0
+		cmp copy_height+0
+		bne !next+
+		lda dst_y_size+1
+		cmp copy_height+1
+		beq !done+
+
+!next:
+
+		// need to offset down dst_offset by copy_height lines
+		_mul16(copy_height, Layout.LogicalRowSize, dst_offset, dst_offset)
+		_set16im(0, src_y_offset)
+
+		_sub16(dst_y_size, copy_height, copy_height)
+
+		jsr CopyScrollingLayerChunks
+
+!done:
+		rts
+	}
+
+	// Copy a column of tile/attrib data to target buffers
+	// 
+	// inputs:	x = layer id
+	//			src_x_size
+	//			copy_height
+	//
 	CopyScrollingLayerChunks: 
 	{
-		lsr src_offset+1
-		ror src_offset+0
-		lsr src_offset+1
-		ror src_offset+0
-		lsr src_offset+1
-		ror src_offset+0
+		// fetch the left column of the source
+		lda ScrollXLo,x
+		sta src_x_offset+0
+		lda ScrollXHi,x
+		sta src_x_offset+1
 
-		_set8(Layout.NumRows, num_lines)
+		lsr src_x_offset+1
+		ror src_x_offset+0
+		lsr src_x_offset+1
+		ror src_x_offset+0
+		lsr src_x_offset+1
+		ror src_x_offset+0
 
-		_and16(src_offset, src_x_and, src_offset)
-		_sub16(copy_length, src_offset, copy_length)
+		_and16(src_x_offset, src_x_and, src_x_offset)
 
-		lda full_x_size+0
-		cmp copy_length+0
-		lda full_x_size+1
-		sbc copy_length+1
+		// 
+		_set16(src_x_size, copy_width)
+		_sub16(copy_width, src_x_offset, copy_width)
+
+		lda dst_x_size+0
+		cmp copy_width+0
+		lda dst_x_size+1
+		sbc copy_width+1
 		bcs !ee+
-		_set16(full_x_size, copy_length)
+		_set16(dst_x_size, copy_width)
 !ee:
 
 		jsr CopyLayerChunks
 
 		// need to fix this with >255 byte wide maps?
-		lda full_x_size+0
-		cmp copy_length+0
+		lda dst_x_size+0
+		cmp copy_width+0
 		bne !next+
-		lda full_x_size+1
-		cmp copy_length+1
+		lda dst_x_size+1
+		cmp copy_width+1
 		beq !done+
 
 !next:
-		_add16(dst_offset, copy_length, dst_offset)
-		_set16im(0, src_offset)
+		_add16(dst_offset, copy_width, dst_offset)
+		_set16im(0, src_x_offset)
 
-		_sub16(full_x_size, copy_length, copy_length)
+		_sub16(dst_x_size, copy_width, copy_width)
 
 		jsr CopyLayerChunks
 
@@ -410,11 +452,17 @@ UpdateData:
 	}
 
 	// Copy a column of tile/attrib data to target buffers
+	// 
+	// inputs:	src_tile_ptr
+	//			src_attrib_ptr
+	//			src_x_offset
+	//			dst_offset
+	//			copy_height
 	//
 	CopyLayerChunks: 
 	{
-		_set16(copy_length, tileLength)
-		_set16(copy_length, attribLength)
+		_set16(copy_width, tileLength)
+		_set16(copy_width, attribLength)
 
 		// Tiles are copied from Bank 0 to (SCREEN_RAM>>20)
 		lda #$00
@@ -440,60 +488,36 @@ UpdateData:
 
 		// DMA tile rows
 		//
-		clc
-		lda src_tile_ptr+0
-		adc src_offset+0
-		sta tileSource+0
-		lda src_tile_ptr+1
-		adc src_offset+1
-		sta tileSource+1
+		_mul16(src_y_offset, src_x_size, src_tile_ptr, tileSource)
+		_add16(tileSource, src_x_offset, tileSource)
+		_add16im(dst_offset, SCREEN_RAM, tileDest)
 
-		clc
-		lda #<SCREEN_RAM
-		adc dst_offset+0
-		sta tileDest+0
-		lda #>SCREEN_RAM
-		adc dst_offset+1
-		sta tileDest+1
-
-		ldx #$00
+		ldz #$00
 	!tloop:
 		RunDMAJob(TileJob)
 
-		_add16(tileSource, src_stride, tileSource)
+		_add16(tileSource, src_x_size, tileSource)
 		_add16(tileDest, Layout.LogicalRowSize, tileDest)
 
-		inx
-		cpx num_lines
+		inz
+		cpz copy_height
 		bne !tloop-
 
 		// DMA attribute rows
 		//
-		clc
-		lda src_attrib_ptr+0
-		adc src_offset+0
-		sta attribSource+0
-		lda src_attrib_ptr+1
-		adc src_offset+1
-		sta attribSource+1
+		_mul16(src_y_offset, src_x_size, src_attrib_ptr, attribSource)
+		_add16(attribSource, src_x_offset, attribSource)
+		_add16im(dst_offset, COLOR_RAM, attribDest)
 
-		clc
-		lda #<COLOR_RAM
-		adc dst_offset+0
-		sta attribDest+0
-		lda #>COLOR_RAM
-		adc dst_offset+1
-		sta attribDest+1
-
-		ldx #$00
+		ldz #$00
 	!aloop:
 		RunDMAJob(AttribJob)
 
-		_add16(attribSource, src_stride, attribSource)
+		_add16(attribSource, src_x_size, attribSource)
 		_add16(attribDest, Layout.LogicalRowSize, attribDest)
 
-		inx
-		cpx num_lines
+		inz
+		cpz copy_height
 		bne !aloop-
 
 		rts 

@@ -82,28 +82,29 @@ gsUpdCredits: {
 	_add16(Camera.XScroll, Camera.CamVelX, Camera.XScroll)
 	_and16im(Camera.XScroll, $7ff, Camera.XScroll)
 	_add16(Camera.YScroll, Camera.CamVelY, Camera.YScroll)
+	_and16im(Camera.YScroll, $7ff, Camera.YScroll)
 
-	// Min Y bounds
-	lda Camera.YScroll+1
-	bpl !+
+// 	// Min Y bounds
+// 	lda Camera.YScroll+1
+// 	bpl !+
 
-	_set16im($0000, Camera.YScroll)
-	_set16im($0001, Camera.CamVelY)
+// 	_set16im($0000, Camera.YScroll)
+// 	_set16im($0001, Camera.CamVelY)
 
-!:
+// !:
 
-	// Max Y bounds
-	sec
-	lda Camera.YScroll+0
-	sbc #<MAXYBOUNDS
-	lda Camera.YScroll+1
-	sbc #>MAXYBOUNDS
-	bmi !+
+// 	// Max Y bounds
+// 	sec
+// 	lda Camera.YScroll+0
+// 	sbc #<MAXYBOUNDS
+// 	lda Camera.YScroll+1
+// 	sbc #>MAXYBOUNDS
+// 	bmi !+
 
-	_set16im(MAXYBOUNDS, Camera.YScroll)
-	_set16im($ffff, Camera.CamVelY)
+// 	_set16im(MAXYBOUNDS, Camera.YScroll)
+// 	_set16im($ffff, Camera.CamVelY)
 
-!:
+// !:
 
 donemove:
 
