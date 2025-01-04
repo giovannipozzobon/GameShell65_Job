@@ -28,19 +28,19 @@ gsIniTitles: {
 
 	// Ensure layer system is initialized
 	ldx #Layout1.id
-	jsr Layers.SelectLayout
-
- 	ldx #Layout1_EOL.id
-	lda #<SCREEN_WIDTH
-	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
-	jsr Layers.SetXPosHi
-
-	jsr Layers.UpdateData.InitEOL
+	jsr Layout.SelectLayout
 
 	Layer_SetRenderFunc(Layout1_BG.id, RenderLayout1BG)
 	Layer_SetRenderFunc(Layout1_Pixie.id, Layers.UpdateData.UpdatePixie)
 	Layer_SetRenderFunc(Layout1_EOL.id, RenderNop)
+
+	_set16(Layout.LayoutWidth, Tmp)
+	
+	ldx #Layout1_EOL.id
+	lda Tmp+0
+	jsr Layers.SetXPosLo
+	lda Tmp+1
+	jsr Layers.SetXPosHi
 
 	rts
 }
@@ -127,14 +127,19 @@ donemove:
 	jsr Layers.SetXPosHi
 
 	lda Camera.XScroll+0
-	jsr Layers.SetFineScroll
+	jsr Layers.SetFineScrollX
 
-	lda DPadClick
+	lda Camera.YScroll+0
+	jsr Layers.SetYPosLo
+	lda Camera.YScroll+1
+	jsr Layers.SetYPosHi
+
+	lda System.DPadClick
 	and #$10
 	beq _not_fire
 
 	lda #GStatePlay
-	jsr SwitchGameStates
+	sta RequestGameState
 
 _not_fire:
 
@@ -143,28 +148,19 @@ _not_fire:
 
 // ------------------------------------------------------------
 //
-gsDrwTitles: {
-
+gsDrwTitles: 
+{
 	_set8im($0f, DrawPal)
 
+	lda Camera.YScroll+0
+	sta PixieYShift
+	
 	// _set16im(0, DrawPosX)
 	// _set16im(16, DrawPosY)
 	// _set16im(sprFont.baseChar, DrawBaseChr)
 	// _set8im(2, DrawSChr)
 	// jsr DrawPixie
 	// rts
-
-	DbgBord(9)
-
-	TextSetPos($30,$28)
-	TextSetMsgPtr(testTxt1)
-	TextDrawSpriteMsg(true, 0, true)
-
-	DbgBord(10)
-
-	TextSetPos($30,$68)
-	TextSetMsgPtr(testTxt2)
-	TextDrawSpriteMsg(true, 64, true)
 
 	DbgBord(11)
 
@@ -187,15 +183,15 @@ gsDrwTitles: {
 	// TextSetMsgPtr(testTxt3)
 	// TextDrawSpriteMsg(true, 0, false)
 
-	lda #$a0
+	lda #$50
 	sta TextPosY
 
 
 	sec
-	lda #<SCREEN_WIDTH
+	lda Layout.LayoutWidth+0
 	sbc GameStateData+0
 	sta TextPosX+0
-	lda #>SCREEN_WIDTH
+	lda Layout.LayoutWidth+1
 	sbc GameStateData+1
 	sta TextPosX+1
 
@@ -208,7 +204,19 @@ gsDrwTitles: {
     lda introTxtTable+1,y
     sta TextPtr+1
 
-	TextDrawSpriteMsg(false, 0, true)
+	TextDrawSpriteMsg(false, 192, true)
+
+	DbgBord(9)
+
+	TextSetPos($30,$20)
+	TextSetMsgPtr(testTxt1)
+	TextDrawSpriteMsg(true, 0, true)
+
+	DbgBord(10)
+
+	TextSetPos($30,$70)
+	TextSetMsgPtr(testTxt2)
+	TextDrawSpriteMsg(true, 64, true)
 
 	rts
 }
@@ -220,23 +228,22 @@ RenderLayout1BG: {
 	ldx #Layout1_BG.id
 	ldy #<BgMap1
 	ldz #>BgMap1
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	// Set the fine Y scroll by moving TextYPos up
 	//
 	lda Camera.YScroll+0
 	and #$07
-#if V200
 	asl						// When in H200 mode, move 2x the number of pixels
-#endif
 	sta shiftUp
 
 	// Modify the TextYPos by shifting it up
 	sec
-	lda System.TopBorder+0
+	lda System.TextYPos+0
 	sbc shiftUp:#$00
 	sta $d04e
-	lda System.TopBorder+1
+	lda System.TextYPos+1
 	sbc #$00
 	and #$0f
 	sta $d04f

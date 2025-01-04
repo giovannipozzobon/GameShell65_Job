@@ -13,9 +13,16 @@
 .segment BSS "System ZP"
 TopBorder:		.word $0000
 BotBorder:		.word $0000
+TextYPos:		.word $0000
 IRQBotPos:		.word $0000
 
 Flags:			.byte $00
+
+//--------------------------------------------------------
+//
+.segment BSS "System BSS"
+DPad:				.byte $00
+DPadClick:			.byte $00
 
 //--------------------------------------------------------
 //
@@ -119,7 +126,8 @@ CenterFrameHorizontally:
 {
 	.var charXPos = Tmp				// 16bit
 
-	_set16im(LEFT_BORDER, charXPos)
+	_set16im(HORIZONTAL_CENTER, charXPos)
+	_sub16(charXPos, Layout.LayoutWidth, charXPos)
 
 	// SDBDRWDLSB,SDBDRWDMSB - Side Border size
 	lda charXPos+0
@@ -141,14 +149,14 @@ CenterFrameHorizontally:
 
 	rts
 }
+
 CenterFrameVertically: 
 {
 	.var verticalCenter = Tmp			// 16bit
 	.var halfCharHeight = Tmp+2			// 16bit
-	.var charYPos = Tmp1				// 16bit
 
 	// The half height of the screen in rasterlines is (charHeight / 2) * 2
-	_set16im(SCREEN_HEIGHT, halfCharHeight)
+	_set16(Layout.LayoutHeight, halfCharHeight)
 
 	// Figure out the vertical center of the screen
 
@@ -166,7 +174,18 @@ isPal:
 	_sub16(verticalCenter, halfCharHeight, TopBorder)
 	_add16(verticalCenter, halfCharHeight, BotBorder)
 
-	_set16(TopBorder, charYPos)
+	_set16(TopBorder, TextYPos)
+
+	// hack!!
+	// If we are running on real hardware then adjust char Y start up to avoid 2 pixel Y=0 bug
+	lda $d60f
+	and #%00100000
+	beq !+
+
+	_sub16im(TextYPos, 4, TextYPos)
+	_sub16im(BotBorder, 1, BotBorder)
+
+!:
 
 	// Set these values on the hardware
 	// TBDRPOS - Top Border
@@ -186,18 +205,161 @@ isPal:
 	tsb $d04b
 
 	// TEXTYPOS - CharYStart
-	lda charYPos+0
+	lda TextYPos+0
 	sta $d04e
 	lda #%00001111
 	trb $d04f
-	lda charYPos+1
+	lda TextYPos+1
 	tsb $d04f
 
-	_add16im(BotBorder, 1, IRQBotPos)
+	//_add16im(BotBorder, 2, IRQBotPos)
+	_add16im(verticalCenter, (MAX_HEIGHT)+4, IRQBotPos)
 
 	lsr IRQBotPos+1
 	ror IRQBotPos+0
 
+	rts
+}
+
+// ------------------------------------------------------------
+//
+InitDPad: {
+
+	lda #$00
+	sta DPad
+	sta DPadClick
+
+	rts
+}
+
+UpdateDPad: {
+	// Scan the keyboard
+	jsr ScanKeyMatrix
+
+	lda DPad
+	sta oldDPad
+
+	lda #$00
+	sta DPad
+
+	lda #$01
+	bit $dc00
+	bne _not_j2_up
+
+	lda #$01
+	tsb DPad
+	bra _not_up
+
+_not_j2_up:
+
+	lda ScanResult+1
+	and #$04
+	bne _not_up
+
+	lda #$01
+	tsb DPad
+
+_not_up:
+
+	lda #$02
+	bit $dc00
+	bne _not_j2_down
+
+	lda #$02
+	tsb DPad
+	bra _not_down
+
+_not_j2_down:
+
+	lda ScanResult+1
+	and #$10
+	bne _not_down
+
+	lda #$02
+	tsb DPad
+
+_not_down:
+
+	lda #$04
+	bit $dc00
+	bne _not_j2_left
+
+	lda #$04
+	tsb DPad
+	bra _not_left
+
+_not_j2_left:
+
+	lda ScanResult+5
+	and #$80
+	bne _not_left
+
+	lda #$04
+	tsb DPad
+
+_not_left:
+
+	lda #$08
+	bit $dc00
+	bne _not_j2_right
+
+	lda #$08
+	tsb DPad
+	bra _not_right
+
+_not_j2_right:
+
+	lda ScanResult+5
+	and #$10
+	bne _not_right
+
+	lda #$08
+	tsb DPad
+
+_not_right:
+
+	lda #$10
+	bit $dc00
+	bne _not_j2_fire
+
+	lda #$10
+	tsb DPad
+	bra _not_fire
+
+_not_j2_fire:
+
+	lda ScanResult+6
+	and #$80
+	bne _not_fire
+
+	lda #$10
+	tsb DPad
+
+_not_fire:
+
+	lda ScanResult+0
+	and #$40
+	bne _not_F5
+
+	lda #$20
+	tsb DPad
+
+_not_F5:
+
+	lda ScanResult+0
+	and #$08
+	bne _not_F7
+
+	lda #$40
+	tsb DPad
+
+_not_F7:
+
+	lda oldDPad:#$00
+	eor DPad
+	and DPad
+	sta DPadClick
+	
 	rts
 }
 

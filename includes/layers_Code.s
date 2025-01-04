@@ -57,14 +57,14 @@ SetYPosLo:
 // A = Layer position Y Hi
 SetYPosHi:
 {
-	sta ScrollXHi,x
+	sta ScrollYHi,x
 	rts
 }
 
 // ------------------------------------------------------------
 // X = Layer Id
 // A = Fine scroll value
-SetFineScroll: 
+SetFineScrollX: 
 {
 	and #$0f
 	sta ul2xscroll
@@ -83,82 +83,21 @@ SetFineScroll:
 	rts
 }
 
-// ------------------------------------------------------------
-// X = Layout Id
-SelectLayout:
+SetFineScrollY:
 {
-	stx LayoutId
-
-	lda LayerBegin,x
-	sta BeginLayer
-	lda LayerEnd,x
-	sta	EndLayer
-
-	lda LayerLogSizeLo,x
-	sta LogicalRowSize+0
-	sta Tmp+0
-	lda LayerLogSizeHi,x
-	sta LogicalRowSize+1
-	sta Tmp+1
-
-	// set HW row width (in bytes)
-	_set16(LogicalRowSize, $d058)
-
-	// Divide Tmp by 2 to get number of characters
-	_half16(Tmp)
-
-	// Shift Tmp+1 up by 4 
-	asl Tmp+1
-	asl Tmp+1
-	asl Tmp+1
-	asl Tmp+1
-
-	// set HW number of characters
-	lda Tmp+0
-	sta $d05e
-	lda $d063
-	and #$cf
-	ora Tmp+1
-	sta $d063
-
-	// set HW number of rows
-	lda #NUM_ROWS
-	sta $d07b 
-
-	lda LayerPixieId,x
+	// Parallax layer a & b
+	and #$07
 	tay
-
-	lda LogOffsLo,y
-	sta PixieGotoOffs+0
-	lda LogOffsHi,y
-	sta PixieGotoOffs+1
-
-	rts
-}
-
-// ------------------------------------------------------------
-//
-UpdateBuffers:
-{
-	// For each of the layers, call the render function
-	//
-	ldx BeginLayer
-
-!layerloop:
-	phx
-	lda RenderFuncLo,x
-	sta Tmp+0
-	lda RenderFuncHi,x
-	sta Tmp+1
-	jsr (Tmp)
-	plx
-
+	lda shiftOffsets1,y
+	sta YShift,x
+	lda shiftMasks,y
+	sta YMask,x
 	inx
-	cpx EndLayer
-	bne !layerloop-
-
-	// Update all of the (horizontal) scroll positions
- 	jsr UpdateScrollPositions
+	eor #$ff
+	sta YMask,x
+	lda shiftOffsets2,y
+	sta YShift,x
+	dex
 
 	rts
 }
@@ -171,7 +110,7 @@ UpdateScrollPositions:
 	.var attrib_ptr = Tmp1		// 32bit
 	.var gotoOffs = Tmp2		// 16bit
 
-	ldx BeginLayer
+	ldx Layout.BeginLayer
 
 !layerloop:
 	lda Layers.ScrollUpdate,x
@@ -180,14 +119,8 @@ UpdateScrollPositions:
 	lda #$00
 	sta Layers.ScrollUpdate,x
 
-	// setup the scroll position
-	lda Layers.FineScrollXLo,x
-	sta xposLo
-	lda Layers.FineScrollXHi,x
-	and #$03
-	sta xposHi
-
 	lda Layers.Trans,x
+	ora #$08				// Add rowmask flag
 	sta transFlag
 
 	// setup the gotox offset
@@ -203,22 +136,23 @@ UpdateScrollPositions:
 
 	phx
 
-		ldy #NUM_ROWS
+		ldy Layout.NumRows
 !loop:
 		// Set GotoX position
 		ldz #0
-		lda xposLo:#$00
+		lda Layers.FineScrollXLo,x
 		sta ((tile_ptr)), z
 		lda transFlag:#$10
 		sta ((attrib_ptr)),z
 		inz
-		lda xposHi:#$00
+		lda YShift,x
+		ora Layers.FineScrollXHi,x
 		sta ((tile_ptr)), z
-		lda #$00
+		lda YMask,x
 		sta ((attrib_ptr)),z
 
-	    _add16(tile_ptr, LogicalRowSize, tile_ptr)
-	    _add16(attrib_ptr, LogicalRowSize, attrib_ptr)
+	    _add16(tile_ptr, Layout.LogicalRowSize, tile_ptr)
+	    _add16(attrib_ptr, Layout.LogicalRowSize, attrib_ptr)
 
 		dey
 		lbne !loop-
@@ -228,7 +162,7 @@ UpdateScrollPositions:
 !layerskip:
 
 	inx
-	cpx EndLayer
+	cpx Layout.EndLayer
 	lbne !layerloop-
 
 	rts
@@ -241,124 +175,40 @@ UpdateScrollPositions:
 //
 UpdateData: 
 {
-	.var src_tile_ptr = Tmp			// 32bit
-	.var src_attrib_ptr = Tmp1		// 32bit
+	.var src_tile_ptr = Tmp			// 32bit o
+	.var src_attrib_ptr = Tmp1		// 32bit o
 
-	.var dst_offset = Tmp2			// 16bit
-	.var copy_length = Tmp2+2		// 16bit
+	.var src_x_size = Tmp2			// 16bit
+	.var src_y_size = Tmp2+2		// 16bit
 
-	.var src_offset = Tmp3			// 16bit
-	.var src_stride = Tmp3+2		// 16bit
+	.var bgDesc = Tmp3				// 16bit
+	.var dst_offset = Tmp3+2		// 16bit
 
-	.var full_size = Tmp4			// 16bit
-	.var src_and = Tmp4+2			// 16bit
+	.var src_x_offset = Tmp4		// 16bit
+	.var src_y_offset = Tmp4+2		// 16bit
 
-	.var bgDesc = Tmp5				// 16bit
+	.var copy_width = Tmp5			// 16bit
+	.var copy_height = Tmp5+2		// 16bit
 
-	UpdateLayer: {
-		sty bgDesc+0
-		stz bgDesc+1
+	.var dst_x_size = Tmp6			// 16bit
+	.var src_x_and = Tmp6+2			// 16bit
 
-		ldy #$00
-		lda (bgDesc),y
-		sta src_tile_ptr+0
-		iny
-		lda (bgDesc),y
-		sta src_tile_ptr+1
-		iny
-		lda (bgDesc),y
-		sta src_tile_ptr+2
-		iny
-		lda (bgDesc),y
-		sta src_tile_ptr+3
-		iny
-
-		lda (bgDesc),y
-		sta src_attrib_ptr+0
-		iny
-		lda (bgDesc),y
-		sta src_attrib_ptr+1
-		iny
-		lda (bgDesc),y
-		sta src_attrib_ptr+2
-		iny
-		lda (bgDesc),y
-		sta src_attrib_ptr+3
-		iny
-
-		// Calculate which row data to add this character to, we
-		// are using the MUL hardware here to avoid having a row table.
-		// 
-		// This translates to $d778-A = (ObjPosY>>3) * LOGICAL_OBJS_SIZE
-		//
-		lda Camera.YScroll+0				// Add ObjPosY >> 3 to charPtr and attribPtr
-		sta $d770 //hw mult A lsb
-		lda Camera.YScroll+1
-		sta $d771
-
-		lda $d771
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		lsr
-		ror $d770
-		sta $d771
-
-		lda #$00
-		sta $d772
-		sta $d776
-
-		lda (bgDesc),y
-		sta $d774
-		sta src_stride+0
-		iny
-		lda (bgDesc),y
-		sta $d775
-		sta src_stride+1
-		iny
-
-		_add16(src_tile_ptr, $d778, src_tile_ptr)		// Add this offset to char and attrib ptrs
-		_add16(src_attrib_ptr, $d778, src_attrib_ptr)
-
-		lda ChrOffsLo,x
-		sta dst_offset+0
-		lda ChrOffsHi,x
-		sta dst_offset+1
-		lda ChrSizeLo,x
-		sta full_size+0
-		lda ChrSizeHi,x
-		sta full_size+1
-
-		lda ScrollXLo,x
-		sta src_offset+0
-		lda ScrollXHi,x
-		sta src_offset+1
-
-		lda (bgDesc),y
-		sta copy_length+0
-		iny
-		lda (bgDesc),y
-		sta copy_length+1
-		iny
-
-		_sub16im(copy_length, $0002, src_and)
-
-		jsr CopyScrollingLayerChunks
-
-		rts
-	}
+	.var dst_y_size = Tmp7			// 16bit
+	.var src_y_and = Tmp7+2			// 16bit
 
 	UpdatePixie: 
 	{
 		_set32im(PixieWorkTiles, src_tile_ptr)
 		_set32im(PixieWorkAttrib, src_attrib_ptr)
 
-		_set16(PixieGotoOffs, dst_offset)
-		_set16im(Layout1_Pixie.DataSize, copy_length)
+		_set16(Layout.PixieGotoOffs, dst_offset)
+		_set16im(0, src_x_offset)
+		_set16im(0, src_y_offset)
 
-		_set16im(0, src_offset)
-		_set16im(Layout1_Pixie.DataSize, src_stride)
+		_set16im(Layout1_Pixie.DataSize, src_x_size)
+
+		_set16(src_x_size, copy_width)
+		_set8(Layout.NumRows, copy_height)
 
 		jsr CopyLayerChunks
 
@@ -375,7 +225,7 @@ UpdateData:
 		_set32im(COLOR_RAM, dst_attrib_ptr)
 
 		// get the selected layout's last layer
-		ldx EndLayer
+		ldx Layout.EndLayer
 		dex
 
 		lda ChrOffsLo,x
@@ -399,51 +249,201 @@ UpdateData:
 		lda #$00
 		sta ((dst_attrib_ptr)),z
 
-		_add16(dst_tile_ptr, LogicalRowSize, dst_tile_ptr)
-		_add16(dst_attrib_ptr, LogicalRowSize, dst_attrib_ptr)
+		_add16(dst_tile_ptr, Layout.LogicalRowSize, dst_tile_ptr)
+		_add16(dst_attrib_ptr, Layout.LogicalRowSize, dst_attrib_ptr)
 
 		iny
-		cpy #NUM_ROWS
+		cpy Layout.NumRows
 		bne !-
 
 		rts
 	}
 
+	UpdateLayer: {
+		sta lineOffs
+		sty bgDesc+0
+		stz bgDesc+1
+
+		ldy #$00
+		lda (bgDesc),y				// map data - tile data pointer
+		sta src_tile_ptr+0
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+1
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+2
+		iny
+		lda (bgDesc),y
+		sta src_tile_ptr+3
+		iny
+
+		lda (bgDesc),y				// map data - attrib data pointer
+		sta src_attrib_ptr+0
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+1
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+2
+		iny
+		lda (bgDesc),y
+		sta src_attrib_ptr+3
+		iny
+
+		lda (bgDesc),y				// map data - number of bytes wide
+		sta src_x_size+0
+		iny
+		lda (bgDesc),y
+		sta src_x_size+1
+		iny
+
+		lda (bgDesc),y				// map data - number of char lines high (pixels / 8)
+		sta src_y_size+0
+		iny
+		lda (bgDesc),y
+		sta src_y_size+1
+		iny
+
+		_sub16im(src_x_size, $0002, src_x_and)
+		_sub16im(src_y_size, $0001, src_y_and)
+
+		lda Layout.NumRows
+		sta dst_y_size+0
+		lda #$00
+		sta dst_y_size+1
+
+		// Calculate which row data to add this character to, we
+		// are using the MUL hardware here to avoid having a row table.
+		// 
+		// This translates to $d778-A = (yScroll>>3) * mapLogicalWidth
+		//
+		clc
+		lda ScrollYLo,x
+		adc lineOffs:#$00
+		sta src_y_offset+0			// mul A lsb
+		lda ScrollYHi,x
+		adc #$00
+		sta src_y_offset+1			// mul A msb
+
+		// divide mul A by 8 to get number of chars to shift by
+		lsr src_y_offset+1
+		ror src_y_offset+0
+		lsr src_y_offset+1
+		ror src_y_offset+0
+		lsr src_y_offset+1
+		ror src_y_offset+0
+
+		_and16(src_y_offset, src_y_and, src_y_offset)
+
+		// 
+		_set16(src_y_size, copy_height)
+		_sub16(copy_height, src_y_offset, copy_height)
+
+		lda dst_y_size+0
+		cmp copy_height+0
+		lda dst_y_size+1
+		sbc copy_height+1
+		bcs !ee+
+		_set16(dst_y_size, copy_height)
+!ee:
+
+		lda ChrSizeLo,x
+		sta dst_x_size+0
+		lda ChrSizeHi,x
+		sta dst_x_size+1
+
+
+		// fetch the left column of the dest
+		lda ChrOffsLo,x
+		sta dst_offset+0
+		lda ChrOffsHi,x
+		sta dst_offset+1
+
+		lda dst_offset+0
+		pha
+		lda dst_offset+1
+		pha
+
+		jsr CopyScrollingLayerChunks
+
+		pla
+		sta dst_offset+1
+		pla	
+		sta dst_offset+0
+
+		// See how many more lines to copy
+		lda dst_y_size+0
+		cmp copy_height+0
+		bne !next+
+		lda dst_y_size+1
+		cmp copy_height+1
+		beq !done+
+
+!next:
+
+		// need to offset down dst_offset by copy_height lines
+		_mul16(copy_height, Layout.LogicalRowSize, dst_offset, dst_offset)
+		_set16im(0, src_y_offset)
+
+		_sub16(dst_y_size, copy_height, copy_height)
+
+		jsr CopyScrollingLayerChunks
+
+!done:
+		rts
+	}
+
+	// Copy a column of tile/attrib data to target buffers
+	// 
+	// inputs:	x = layer id
+	//			src_x_size
+	//			copy_height
+	//
 	CopyScrollingLayerChunks: 
 	{
-		lsr src_offset+1
-		ror src_offset+0
-		lsr src_offset+1
-		ror src_offset+0
-		lsr src_offset+1
-		ror src_offset+0
+		// fetch the left column of the source
+		lda ScrollXLo,x
+		sta src_x_offset+0
+		lda ScrollXHi,x
+		sta src_x_offset+1
 
-		_and16(src_offset, src_and, src_offset)
-		_sub16(copy_length, src_offset, copy_length)
+		lsr src_x_offset+1
+		ror src_x_offset+0
+		lsr src_x_offset+1
+		ror src_x_offset+0
+		lsr src_x_offset+1
+		ror src_x_offset+0
 
-		lda full_size+0
-		cmp copy_length+0
-		lda full_size+1
-		sbc copy_length+1
+		_and16(src_x_offset, src_x_and, src_x_offset)
+
+		// 
+		_set16(src_x_size, copy_width)
+		_sub16(copy_width, src_x_offset, copy_width)
+
+		lda dst_x_size+0
+		cmp copy_width+0
+		lda dst_x_size+1
+		sbc copy_width+1
 		bcs !ee+
-		_set16(full_size, copy_length)
+		_set16(dst_x_size, copy_width)
 !ee:
 
 		jsr CopyLayerChunks
 
 		// need to fix this with >255 byte wide maps?
-		lda full_size+0
-		cmp copy_length+0
+		lda dst_x_size+0
+		cmp copy_width+0
 		bne !next+
-		lda full_size+1
-		cmp copy_length+1
+		lda dst_x_size+1
+		cmp copy_width+1
 		beq !done+
 
 !next:
-		_add16(dst_offset, copy_length, dst_offset)
-		_set16im(0, src_offset)
+		_add16(dst_offset, copy_width, dst_offset)
+		_set16im(0, src_x_offset)
 
-		_sub16(full_size, copy_length, copy_length)
+		_sub16(dst_x_size, copy_width, copy_width)
 
 		jsr CopyLayerChunks
 
@@ -451,89 +451,73 @@ UpdateData:
 		rts
 	}
 
+	// Copy a column of tile/attrib data to target buffers
+	// 
+	// inputs:	src_tile_ptr
+	//			src_attrib_ptr
+	//			src_x_offset
+	//			dst_offset
+	//			copy_height
+	//
 	CopyLayerChunks: 
 	{
-		_set16(copy_length, tileLength)
-		_set16(copy_length, attribLength)
+		_set16(copy_width, tileLength)
+		_set16(copy_width, attribLength)
 
 		// Tiles are copied from Bank 0 to (SCREEN_RAM>>20)
 		lda #$00
 		sta tileSourceBank
 		lda #SCREEN_RAM>>20
 		sta tileDestBank
+		lda src_tile_ptr+2
+		sta tileSource+2
+		lda #[SCREEN_RAM >> 16]
+		and #$0f
+		sta tileDest+2
 
 		// Attribs are copied from Bank 0 to (COLOR_RAM>>20)
 		lda #$00
 		sta attribSourceBank
 		lda #COLOR_RAM>>20
 		sta attribDestBank
-
-		// DMA tile rows
-		//
-		clc
-		lda src_tile_ptr+0
-		adc src_offset+0
-		sta tileSource+0
-		lda src_tile_ptr+1
-		adc src_offset+1
-		sta tileSource+1
-		lda src_tile_ptr+2
-		sta tileSource+2
-
-		clc
-		lda #<SCREEN_RAM
-		adc dst_offset+0
-		sta tileDest+0
-		lda #>SCREEN_RAM
-		adc dst_offset+1
-		sta tileDest+1
-		lda #[SCREEN_RAM >> 16]
-		and #$0f
-		sta tileDest+2
-
-		ldx #$00
-	!tloop:
-		RunDMAJob(TileJob)
-
-		_add16(tileSource, src_stride, tileSource)
-		_add16(tileDest, LogicalRowSize, tileDest)
-
-		inx
-		cpx #NUM_ROWS
-		bne !tloop-
-
-		// DMA attribute rows
-		//
-		clc
-		lda src_attrib_ptr+0
-		adc src_offset+0
-		sta attribSource+0
-		lda src_attrib_ptr+1
-		adc src_offset+1
-		sta attribSource+1
 		lda src_attrib_ptr+2
 		sta attribSource+2
-
-		clc
-		lda #<COLOR_RAM
-		adc dst_offset+0
-		sta attribDest+0
-		lda #>COLOR_RAM
-		adc dst_offset+1
-		sta attribDest+1
 		lda #[COLOR_RAM >> 16]
 		and #$0f
 		sta attribDest+2
 
-		ldx #$00
+		// DMA tile rows
+		//
+		_mul16(src_y_offset, src_x_size, src_tile_ptr, tileSource)
+		_add16(tileSource, src_x_offset, tileSource)
+		_add16im(dst_offset, SCREEN_RAM, tileDest)
+
+		ldz #$00
+	!tloop:
+		RunDMAJob(TileJob)
+
+		_add16(tileSource, src_x_size, tileSource)
+		_add16(tileDest, Layout.LogicalRowSize, tileDest)
+
+		inz
+		cpz copy_height
+		bne !tloop-
+
+		// DMA attribute rows
+		//
+		_mul16(src_y_offset, src_x_size, src_attrib_ptr, attribSource)
+		_add16(attribSource, src_x_offset, attribSource)
+		_add16im(dst_offset, COLOR_RAM, attribDest)
+
+		ldz #$00
 	!aloop:
 		RunDMAJob(AttribJob)
 
-		_add16(attribSource, src_stride, attribSource)
-		_add16(attribDest, LogicalRowSize, attribDest)
+		_add16(attribSource, src_x_size, attribSource)
+		_add16(attribDest, Layout.LogicalRowSize, attribDest)
 
-		inx
-		cpx #NUM_ROWS
+		inz
+		cpz copy_height
 		bne !aloop-
 
 		rts 
@@ -593,29 +577,23 @@ ChrOffsHi:		.fill LayerList.size(), >LayerList.get(i).ChrOffs
 ChrSizeLo:		.fill LayerList.size(), <LayerList.get(i).ChrSize
 ChrSizeHi:		.fill LayerList.size(), >LayerList.get(i).ChrSize
 
-LayerBegin:		.fill LayoutList.size(), LayoutList.get(i).begin
-LayerEnd:		.fill LayoutList.size(), LayoutList.get(i).end
-LayerLogSizeLo:	.fill LayoutList.size(), <LayoutList.get(i).logicalSize
-LayerLogSizeHi:	.fill LayoutList.size(), >LayoutList.get(i).logicalSize
-LayerPixieId:	.fill LayoutList.size(), LayoutList.get(i).pixieId
+.segment Data "Layer Data YScroll"
+YShift:			.fill LayerList.size(), $00
+YMask:			.fill LayerList.size(), $ff
+
+shiftMasks: .byte %11111111,%01111111,%00111111,%00011111,%00001111,%00000111,%00000011,%00000001,%00000000
+shiftOffsets1: .byte (0<<5),(1<<5),(2<<5),(3<<5),(4<<5),(5<<5),(6<<5),(7<<5)
+shiftOffsets2: .byte (0<<5),(7<<5)|$10,(6<<5)|$10,(5<<5)|$10,(4<<5)|$10,(3<<5)|$10,(2<<5)|$10,(1<<5)|$10
 
 .segment BSS "Layer BSS"
-LayoutId:		.byte	$00
-
-BeginLayer:		.byte	$00
-EndLayer:		.byte	$00
-
-LogicalRowSize:	.word 	$00
-PixieGotoOffs:	.word 	$00
-
 
 ScrollUpdate:	.fill LayerList.size(), $00
 
 RenderFuncLo:	.fill LayerList.size(), $00
 RenderFuncHi:	.fill LayerList.size(), $00
 
-ScrollXLo:	.fill LayerList.size(), $40
-ScrollXHi:	.fill LayerList.size(), $01
+ScrollXLo:		.fill LayerList.size(), $40
+ScrollXHi:		.fill LayerList.size(), $01
 
 FineScrollXLo:	.fill LayerList.size(), $40
 FineScrollXHi:	.fill LayerList.size(), $01

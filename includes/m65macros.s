@@ -12,24 +12,8 @@
 #endif
 
 // H&V PIXELSCALE are used because H320&V200 pixel size is twice the size of H640&V400
-#if H320
 .const HPIXELSCALE = 2
-#else
-.const HPIXELSCALE = 1
-#endif
-
-#if V200
 .const VPIXELSCALE = 2
-#else
-.const VPIXELSCALE = 1
-#endif
-
-// Calculate Left, Top and Bottom border sizes based on visble screen area and
-// horizontal and vertial centers
-//
-.const LEFT_BORDER = (HORIZONTAL_CENTER - ((SCREEN_WIDTH * HPIXELSCALE) / 2))
-.const TOP_BORDER = (VERTICAL_CENTER - ((SCREEN_HEIGHT * VPIXELSCALE) / 2))
-.const BOTTOM_BORDER = (VERTICAL_CENTER + ((SCREEN_HEIGHT * VPIXELSCALE) / 2))
 
 // ------------------------------------------------------------
 //
@@ -115,6 +99,13 @@ start:
 .macro _set8im(value, dst)
 {
 	lda #value
+	sta dst
+}
+
+// _set8 - store an 8bit value to a memory location
+.macro _set8(value, dst)
+{
+	lda value
 	sta dst
 }
 
@@ -274,6 +265,32 @@ start:
 	ror
 	ror srcdst+0
 	sta srcdst+1
+}
+
+.macro _double16(srcdst)
+{
+	asl srcdst+0
+	rol srcdst+1
+}
+
+// D = C + (A * B)
+.macro _mul16(A,B,C,D)
+{
+	lda #$00
+	sta $d772
+	sta $d776
+
+	lda A+0
+	sta $d770					// mul A lsb
+	lda A+1
+	sta $d771					// mul A msb
+
+	lda B+0
+	sta $d774					// mul B lsb
+	lda B+1
+	sta $d775					// mul B msb
+
+	_add16(C, $d778, D)
 }
 
 // _set24im - store a 24bit constant to a memory location

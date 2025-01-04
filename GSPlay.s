@@ -28,26 +28,26 @@ gsIniPlay: {
 	_set16im($0000, Camera.CamVelY)
 
 	_set16im($0000, Camera.XScroll)
-	_set16im($0001, Camera.CamVelX)
+	_set16im($0002, Camera.CamVelX)
 
 	jsr InitObjData
 
 	// Ensure layer system is initialized
 	ldx #Layout2.id
-	jsr Layers.SelectLayout
-
- 	ldx #Layout2_EOL.id
-	lda #<SCREEN_WIDTH
-	jsr Layers.SetXPosLo
-	lda #>SCREEN_WIDTH
-	jsr Layers.SetXPosHi
-
-	jsr Layers.UpdateData.InitEOL
+	jsr Layout.SelectLayout
 
 	Layer_SetRenderFunc(Layout2_BG0.id, RenderLayout2BG0)
 	Layer_SetRenderFunc(Layout2_BG1.id, RenderLayout2BG1)
 	Layer_SetRenderFunc(Layout2_Pixie.id, Layers.UpdateData.UpdatePixie)
 	Layer_SetRenderFunc(Layout2_EOL.id, RenderNop)
+
+	_set16(Layout.LayoutWidth, Tmp)
+	
+	ldx #Layout2_EOL.id
+	lda Tmp+0
+	jsr Layers.SetXPosLo
+	lda Tmp+1
+	jsr Layers.SetXPosHi
 
 	rts
 }
@@ -78,29 +78,9 @@ gsUpdPlay: {
 	lbne donemove
 
 	_add16(Camera.XScroll, Camera.CamVelX, Camera.XScroll)
+	_and16im(Camera.XScroll, $1ff, Camera.XScroll)
 	_add16(Camera.YScroll, Camera.CamVelY, Camera.YScroll)
 
-	// Min X bounds
-	lda Camera.XScroll+1
-	bpl !+
-
-	_set16im($0000, Camera.XScroll)
-	_set16im($0001, Camera.CamVelX)
-
-!:
-
-	// Max X bounds
-	sec
-	lda Camera.XScroll+0
-	sbc #<MAXXBOUNDS
-	lda Camera.XScroll+1
-	sbc #>MAXXBOUNDS
-	bmi !+
-
-	_set16im(MAXXBOUNDS, Camera.XScroll)
-	_set16im($ffff, Camera.CamVelX)
-
-!:
 	// Min Y bounds
 	lda Camera.YScroll+1
 	bpl !+
@@ -139,7 +119,12 @@ donemove:
 	jsr Layers.SetXPosHi
 
 	lda Tmp+0
-	jsr Layers.SetFineScroll
+	jsr Layers.SetFineScrollX
+
+	lda Camera.YScroll+0
+	jsr Layers.SetYPosLo
+	lda Camera.YScroll+1
+	jsr Layers.SetYPosHi
 
 	// divide Tmp by 2
 	_half16(Tmp)
@@ -153,14 +138,19 @@ donemove:
 	jsr Layers.SetXPosHi
 
 	lda Tmp+0
-	jsr Layers.SetFineScroll
+	jsr Layers.SetFineScrollX
 
-	lda DPadClick
+	lda Camera.YScroll+0
+	jsr Layers.SetYPosLo
+	lda Camera.YScroll+1
+	jsr Layers.SetYPosHi
+
+	lda System.DPadClick
 	and #$10
 	beq _not_fire
 
-	lda #GStateTitles
-	jsr SwitchGameStates
+	lda #GStateCredits
+	sta RequestGameState
 
 _not_fire:
 
@@ -169,16 +159,9 @@ _not_fire:
 
 // ------------------------------------------------------------
 //
-gsDrwPlay: {
-
+gsDrwPlay: 
+{
 	_set8im($0f, DrawPal)
-
-	// _set16im(0, DrawPosX)
-	// _set16im(16, DrawPosY)
-	// _set16im(sprFont.baseChar, DrawBaseChr)
-	// _set8im(2, DrawSChr)
-	// jsr DrawPixie
-	// rts
 
 	jsr DrawObjData
 
@@ -187,42 +170,27 @@ gsDrwPlay: {
 
 // ------------------------------------------------------------
 //
-RenderLayout2BG0: {
+RenderLayout2BG0: 
+{
 	// 
 	ldx #Layout2_BG0.id
 	ldy #<BgMap1
 	ldz #>BgMap1
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
-
-	// Set the fine Y scroll by moving TextYPos up
-	//
-	lda Camera.YScroll+0
-	and #$07
-#if V200
-	asl						// When in H200 mode, move 2x the number of pixels
-#endif
-	sta shiftUp
-
-	// Modify the TextYPos by shifting it up
-	sec
-	lda System.TopBorder+0
-	sbc shiftUp:#$00
-	sta $d04e
-	lda System.TopBorder+1
-	sbc #$00
-	and #$0f
-	sta $d04f
 
 	rts	
 }
 
 // ------------------------------------------------------------
 //
-RenderLayout2BG1: {
+RenderLayout2BG1: 
+{
 	// 
 	ldx #Layout2_BG1.id
 	ldy #<BgMap2
 	ldz #>BgMap2
+	lda #$00
 	jsr Layers.UpdateData.UpdateLayer
 
 	rts	
@@ -308,7 +276,7 @@ InitObjData:
 
 	ldx #$00
 iloop1:
-	lda xpos
+	lda xpos+0
 	sta Objs1PosXLo,x
 	lda xpos+1
 	sta Objs1PosXHi,x
@@ -338,9 +306,9 @@ ip1:
 	sta Objs1VelXHi,x
 id1:
 
-	_add16im(xpos, -14, xpos)
+	_add16im(xpos, -28, xpos)
 	_and16im(xpos, $1ff, xpos)
-	_add8im(ypos, 5, ypos)
+	_add8im(ypos, 10, ypos)
 
 	inx
 	cpx #NUM_OBJS1
@@ -370,6 +338,7 @@ Objs1VelY:
 	.fill NUM_OBJS1, 0
 Objs1Spr:
 	.fill NUM_OBJS1, 0
+
 
 
 
