@@ -36,6 +36,7 @@ disk:
 datablobs:
 	$(MEGATOOL) -p 00000100 \
 		sdcard/bg20_chr.bin \
+		sdcard/bg21_chr.bin \
 		sdcard/bg22_chr.bin \
 		sdcard/font_chr.bin \
 		sdcard/data.bin
