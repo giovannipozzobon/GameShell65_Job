@@ -2,9 +2,9 @@
 //
 .macro WaitVblank() {
 	// Wait for IRQ before disabling the screen
-	lda Irq.VBlankCount
+	lda.zp Irq.VBlankCount
 !:
-	cmp Irq.VBlankCount
+	cmp.zp Irq.VBlankCount
 	beq !-
 }
 
