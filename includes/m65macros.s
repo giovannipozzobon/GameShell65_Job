@@ -636,6 +636,10 @@ start:
 	.byte $84, DestStepFractional
 	.byte $85, DestStep		
 }
+.macro DMADestStep(DestStep, DestStepFractional) {
+	.byte $84, DestStepFractional
+	.byte $85, DestStep		
+}
 .macro DMADisableTransparency() {
 	.byte $06
 }

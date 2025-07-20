@@ -49,25 +49,29 @@ ClearWorkPixies: {
 	cpx Layout.NumRows
 	bne !-
 
+	lda Irq.VBlankCount
+	and #$0f
+	sta $d020
+
 	// Clear the working pixie data using DMA
-	RunDMAJob(Job)
+	RunDMAJob(JobFill)
+
+	lda #$00
+	sta $d020
 
 	rts 
-Job:
-	DMAHeader(ClearPixieTile>>20, PixieWorkTiles>>20)
+
+JobFill:
+	// We fill ONLY the attrib0 byte with a GOTOX + TRANS token, note the 2 byte step value
+	DMAHeader(0, PixieWorkAttrib>>20)
+	DMADestStep(2, 0)
 	.for(var r=0; r<MAX_NUM_ROWS; r++) {
-		// Tile
-		DMACopyJob(
-			ClearPixieTile, 
-			PixieWorkTiles + (r * Layout1_Pixie.DataSize),
-			Layout1_Pixie.DataSize,
-			true, false)
 		// Atrib
-		DMACopyJob(
-			ClearPixieAttrib,
+		DMAFillJob(
+			$90,
 			PixieWorkAttrib + (r * Layout1_Pixie.DataSize),
-			Layout1_Pixie.DataSize,
-			(r!=(MAX_NUM_ROWS-1)), false)
+			Layout1_Pixie.DataSize / 2,
+			(r!=(MAX_NUM_ROWS-1)))
 	}
 }	
 
@@ -331,21 +335,6 @@ done:
 
 	rts
 }
-
-// ------------------------------------------------------------
-//
-.segment Data "Pixie Clear Data"
-ClearPixieTile:
-	.for(var c = 0;c < NUM_PIXIEWORDS;c++) 
-	{
-		.byte <SCREEN_WIDTH,>SCREEN_WIDTH
-	}
-
-ClearPixieAttrib:
-	.for(var c = 0;c < NUM_PIXIEWORDS;c++) 
-	{
-		.byte $90,$00
-	}
 
 // ------------------------------------------------------------
 //
