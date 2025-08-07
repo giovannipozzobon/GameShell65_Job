@@ -290,6 +290,7 @@ mainloop:
 	// ALL pixie data and sets the X and Y scroll values
 	//
 	jsr Layout.ConfigureHW
+
 	jsr Layout.UpdateBuffers
 
 	// If the frame is disabled, enable it, this ensure first frame of garbage isn't seen

@@ -213,7 +213,7 @@ isPal:
 	tsb $d04f
 
 	//_add16im(BotBorder, 2, IRQBotPos)
-	_add16im(verticalCenter, (MAX_HEIGHT)+4, IRQBotPos)
+	_add16im(verticalCenter, (MAX_HEIGHT), IRQBotPos)
 
 	lsr IRQBotPos+1
 	ror IRQBotPos+0
