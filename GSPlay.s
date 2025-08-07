@@ -28,7 +28,7 @@ gsIniPlay: {
 	_set16im($0000, Camera.CamVelY)
 
 	_set16im($0000, Camera.XScroll)
-	_set16im($0002, Camera.CamVelX)
+	_set16im($0000, Camera.CamVelX)
 
 	jsr InitObjData
 
@@ -239,6 +239,58 @@ DrawObjData:
 	ldx #$00
 !:
 	lda Objs1PosYLo,x
+	sta DrawPosY+0
+
+	sec
+	lda Objs1PosXLo,x
+	sbc #$20
+	sta DrawPosX+0
+	lda Objs1PosXHi,x
+	sbc #$00
+	sta DrawPosX+1
+
+	lda Objs1Spr,x
+	sta DrawSChr
+
+	jsr DrawPixie
+
+	inx
+	cpx #NUM_OBJS1
+	bne !-
+
+	// Add Objs into the work ram here
+	//
+	ldx #$00
+!:
+	clc
+	lda Objs1PosYLo,x
+	adc #$10
+	sta DrawPosY+0
+
+	sec
+	lda Objs1PosXLo,x
+	sbc #$20
+	sta DrawPosX+0
+	lda Objs1PosXHi,x
+	sbc #$00
+	sta DrawPosX+1
+
+	lda Objs1Spr,x
+	sta DrawSChr
+
+	jsr DrawPixie
+
+	inx
+	cpx #NUM_OBJS1
+	bne !-
+
+	// Add Objs into the work ram here
+	//
+	ldx #$00
+!:
+	clc
+	lda Objs1PosYLo,x
+	adc #$20
 	sta DrawPosY+0
 
 	sec

@@ -492,9 +492,11 @@ UpdateData:
 		_add16(tileSource, src_x_offset, tileSource)
 		_add16im(dst_offset, SCREEN_RAM, tileDest)
 
+		RunDMAJobHi(TileJob)
+
 		ldz #$00
 	!tloop:
-		RunDMAJob(TileJob)
+		RunDMAJobLo(TileJob)
 
 		_add16(tileSource, src_x_size, tileSource)
 		_add16(tileDest, Layout.LogicalRowSize, tileDest)
@@ -509,9 +511,11 @@ UpdateData:
 		_add16(attribSource, src_x_offset, attribSource)
 		_add16im(dst_offset, COLOR_RAM, attribDest)
 
+		RunDMAJobHi(AttribJob)
+
 		ldz #$00
 	!aloop:
-		RunDMAJob(AttribJob)
+		RunDMAJobLo(AttribJob)
 
 		_add16(attribSource, src_x_size, attribSource)
 		_add16(attribDest, Layout.LogicalRowSize, attribDest)
