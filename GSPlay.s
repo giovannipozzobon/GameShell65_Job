@@ -252,6 +252,12 @@ DrawObjData:
 	lda Objs1Spr,x
 	sta DrawSChr
 
+	clc
+	lda $d020
+	adc #$01
+	and #$0f
+	sta $d020
+
 	jsr DrawPixie
 
 	inx
@@ -277,6 +283,12 @@ DrawObjData:
 
 	lda Objs1Spr,x
 	sta DrawSChr
+
+	clc
+	lda $d020
+	adc #$01
+	and #$0f
+	sta $d020
 
 	jsr DrawPixie
 
