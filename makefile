@@ -3,7 +3,9 @@
 	PNG65=node ./build/aseparse65/png65.js
 	LDTK65=node ./build/ldtk65/ldtk65.js
 	JTAG=/dev/cu.usbserial-2516330596481
-	
+	EMEGA65_FTP_ARGS=-e -F -c "put $(DISKNAME)" -c "quit"
+	ETHERLOAD_ARGS=-r -m $(DISKNAME) bin/$(APPNAME).prg.addr.mc
+
 ifeq ($(windows), 1)
 	KICK=./KickAss65CE02-5.24f.jar
 	C1541=d:/PCTOOLS/c1541.exe
@@ -11,8 +13,6 @@ ifeq ($(windows), 1)
 	MEGA65_FTP=d:/PCTOOLS/mega65_ftp.exe
 	EMEGA65_FTP=d:/PCTOOLS/mega65_ftp.exe
 	ETHERLOAD=d:/PCTOOLS/etherload.exe
-	EMEGA65_FTP_ARGS=-e -F -c "put $(DISKNAME)" -c "quit"
-	ETHERLOAD_ARGS=-r -m $(DISKNAME) bin/$(APPNAME).prg.addr.mc
 	MEGATOOL=./build/megatool/megatool.exe
 else
 	KICK=/Applications/KickAssembler/KickAss65CE02-5.25.jar
@@ -21,8 +21,6 @@ else
 	MEGA65_FTP=/Applications/m65tools/mega65_ftp.osx
 	EMEGA65_FTP=~/Documents/MEGA65/mega65_ftp.osx
 	ETHERLOAD=/Applications/m65tools/etherload.osx
-	EMEGA65_FTP_ARGS=-e -F -c "put $(DISKNAME)" -c "quit"
-	ETHERLOAD_ARGS=-r -m $(DISKNAME) bin/$(APPNAME).prg.addr.mc
 	MEGATOOL=./build/megatool/macmegatool.exe
 endif
 

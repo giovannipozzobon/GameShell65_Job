@@ -616,15 +616,24 @@ start:
 	sta tar
 }
 
-.macro RunDMAJob(JobPointer) {
+.macro RunDMAJobHi(JobPointer) {
 	lda #[JobPointer >> 16]
 	sta $d702
 	sta $d704
 	lda #>JobPointer
 	sta $d701
+}
+
+.macro RunDMAJobLo(JobPointer) {
 	lda #<JobPointer
 	sta $d705
 }
+
+.macro RunDMAJob(JobPointer) {
+	RunDMAJobHi(JobPointer)
+	RunDMAJobLo(JobPointer)
+}
+
 .macro DMAHeader(SourceBank, DestBank) {
 	.byte $0A // Request format is F018A
 	.byte $80, SourceBank
@@ -633,6 +642,10 @@ start:
 .macro DMAStep(SourceStep, SourceStepFractional, DestStep, DestStepFractional) {
 	.byte $82, SourceStepFractional
 	.byte $83, SourceStep
+	.byte $84, DestStepFractional
+	.byte $85, DestStep		
+}
+.macro DMADestStep(DestStep, DestStepFractional) {
 	.byte $84, DestStepFractional
 	.byte $85, DestStep		
 }

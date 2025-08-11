@@ -113,7 +113,7 @@
 // Static BG Map sizes, in this example we are expanding the tile / map
 // set into a static buffer, for a real game you'd want to be more fancy
 //
-.const BG0ROWSIZE = (256 / 16) * 2
+.const BG0ROWSIZE = (512 / 16) * 2
 .const BG0NUMROWS = (256 / 8)
 
 .const BG1ROWSIZE = (512 / 16) * 2
@@ -290,6 +290,7 @@ mainloop:
 	// ALL pixie data and sets the X and Y scroll values
 	//
 	jsr Layout.ConfigureHW
+
 	jsr Layout.UpdateBuffers
 
 	// If the frame is disabled, enable it, this ensure first frame of garbage isn't seen
