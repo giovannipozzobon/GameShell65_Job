@@ -16,7 +16,7 @@ ifeq ($(windows), 1)
 	MEGATOOL=./build/megatool/megatool.exe
 else
 	KICK=/Applications/KickAssembler/KickAss65CE02-5.25.jar
-	C1541=/opt/homebrew/Cellar/vice/3.8/bin/c1541
+	C1541=/opt/homebrew/Cellar/vice/3.9/bin/c1541
 	XEMU=/Applications/Mega65/bin/xmega65
 	MEGA65_FTP=/Applications/m65tools/mega65_ftp.osx
 	EMEGA65_FTP=~/Documents/MEGA65/mega65_ftp.osx
